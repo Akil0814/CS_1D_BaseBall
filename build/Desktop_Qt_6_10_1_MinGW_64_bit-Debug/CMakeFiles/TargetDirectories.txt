@@ -1,9 +1,0 @@
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/CS_1D_BaseBall.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/edit_cache.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/rebuild_cache.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/list_install_components.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/install.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/install/local.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/install/strip.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/CS_1D_BaseBall_autogen_timestamp_deps.dir
-C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug/CMakeFiles/CS_1D_BaseBall_autogen.dir
