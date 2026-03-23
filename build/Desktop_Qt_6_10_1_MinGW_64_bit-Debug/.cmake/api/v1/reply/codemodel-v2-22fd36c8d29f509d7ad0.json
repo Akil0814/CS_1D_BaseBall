@@ -1,0 +1,79 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-9a109404f4867ce58fd5.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "CS_1D_BaseBall",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "CS_1D_BaseBall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-CS_1D_BaseBall-Debug-c5e8883c614d81ce0ea8.json",
+					"name" : "CS_1D_BaseBall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "CS_1D_BaseBall_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-CS_1D_BaseBall_autogen-Debug-6282af2e12769a585db4.json",
+					"name" : "CS_1D_BaseBall_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "CS_1D_BaseBall_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-CS_1D_BaseBall_autogen_timestamp_deps-Debug-45de59ff73aa2f992de9.json",
+					"name" : "CS_1D_BaseBall_autogen_timestamp_deps",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/CS1D_P1/CS_1D_BaseBall/build/Desktop_Qt_6_10_1_MinGW_64_bit-Debug",
+		"source" : "C:/CS1D_P1/CS_1D_BaseBall"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
