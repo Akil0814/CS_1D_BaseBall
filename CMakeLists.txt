@@ -26,6 +26,12 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        application.h application.cpp
+        database_manager.h database_manager.cpp
+        auth_service.h auth_service.cpp
+        trip_planner.h trip_planner.cpp
+        trip.h trip.cpp
+        stadium_repository.h stadium_repository.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET CS_1D_BaseBall APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
