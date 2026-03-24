@@ -1,3 +1,6 @@
 #include "trip.h"
 
-Trip::Trip() {}
+Trip::Trip()
+{
+
+}

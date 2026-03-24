@@ -1,61 +1,51 @@
+# User-specific CMake presets
 CMakeUserPresets.json
 CMakePresets.json
 
-# This file is used to ignore files which are generated
-# ----------------------------------------------------------------------------
-
+# Temporary / backup files
 *~
 *.autosave
-*.a
-*.core
-*.moc
-*.o
-*.obj
 *.orig
 *.rej
+.*.swp
+*.flc
+
+# Object / binary files
+*.a
+*.o
+*.obj
 *.so
 *.so.*
-*_pch.h.cpp
-*_resource.rc
-*.qm
-.#*
-*.*#
-core
-!core/
-tags
-.DS_Store
-.directory
-*.debug
-Makefile*
-*.prl
+*.dll
+*.exe
 *.app
+*.pyc
+
+# Qt generated files
+*.moc
 moc_*.cpp
 ui_*.h
 qrc_*.cpp
-Thumbs.db
-*.res
-*.rc
+*.qm
+*_pch.h.cpp
+*_resource.rc
+
+# Qt Creator / qmake / CMake generated files
 /.qmake.cache
 /.qmake.stash
-*.user
-
-# qtcreator generated files
+/.qtcreator
 *.pro.user*
 *.qbs.user*
 CMakeLists.txt.user*
-# CMake user-specific presets
-CMakePresets.json
-CMakeUserPresets.json
 
-
-# xemacs temporary files
-*.flc
-
-# Vim temporary files
-.*.swp
-
-# Visual Studio generated files
-*.ib_pdb_index
+# IDE / platform files
+.DS_Store
+.directory
+Thumbs.db
+*.user
+*.debug
+*.res
+*.rc
 *.idb
 *.ilk
 *.pdb
@@ -69,20 +59,9 @@ CMakeUserPresets.json
 *.vcxproj
 *vcxproj.*
 *.vs
+*.ib_pdb_index
 
-# MinGW generated files
-*.Debug
-*.Release
-
-# Python byte code
-*.pyc
-
-# Binaries
-# --------
-*.dll
-*.exe
-
-# Directories with generated files
+# Build directories
 .moc/
 .obj/
 .pch/
@@ -90,8 +69,10 @@ CMakeUserPresets.json
 .uic/
 /build*/
 out/
+*.Debug
+*.Release
 
-# sqlite database files
+# Database runtime files
 *.db
 *.db-shm
 *.db-wal
