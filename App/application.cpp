@@ -1,19 +1,9 @@
 #include "application.h"
 
-#include <iostream>
-
-Application* Application::_instance = nullptr;
-
 Application* Application::instance()
 {
-    if (_instance == nullptr)
-    {
-        _instance = new Application();
-    }
-
-    std::cout << "test" << std::endl;
-
-    return _instance;
+    static Application instance;
+    return &instance;
 }
 
 Application::Application() = default;
@@ -22,17 +12,30 @@ Application::~Application() = default;
 
 bool Application::init()
 {
-    _db_manager = std::make_unique<DatabaseManager>();
+    _db_manager = std::unique_ptr<DatabaseManager>(new DatabaseManager());
 
-    _stadium_repo = std::make_unique<StadiumRepository>();
-    _souvenir_repo = std::make_unique<SouvenirRepository>();
-    _distance_repo = std::make_unique<DistanceRepository>();
+    if (databaseManager()->init())
+    {
+        _last_error = databaseManager()->lastError();
+        std::cerr << _last_error << std::endl;
+        return false;
+    }
 
-    _auth_service = std::make_unique<AuthService>();
-    _trip_planner = std::make_unique<TripPlanner>();
+    _stadium_repo = std::unique_ptr<StadiumRepository>(new StadiumRepository());
+    _souvenir_repo = std::unique_ptr<SouvenirRepository>(new SouvenirRepository());
+    _distance_repo = std::unique_ptr<DistanceRepository>(new DistanceRepository());
+
+    _auth_service = std::unique_ptr<AuthService>(new AuthService());
+    _trip_planner = std::unique_ptr<TripPlanner>(new TripPlanner());
 
     return true;
 }
+
+const std::string& Application::lastError() const
+{
+    return _last_error;
+}
+
 
 DatabaseManager* Application::databaseManager() const
 {

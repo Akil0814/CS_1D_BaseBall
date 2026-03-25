@@ -18,5 +18,6 @@ int main(int argc, char *argv[])
 void test()
 {
     APP->init();
+    APP->authService()->idVerify("cs1d", "abc");
     std::cout << "testing" << std::endl;
 }

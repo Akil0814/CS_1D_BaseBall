@@ -27,14 +27,20 @@ public:
     AuthService* authService() const;
     TripPlanner* tripPlanner() const;
 
+    const std::string& lastError() const;
+
 private:
     Application();
     Application(const Application& copy) = delete;
     Application& operator=(const Application& copy) = delete;
+    Application(Application&& move) = delete;
+    Application& operator=(Application&& move) = delete;
     ~Application();
 
 private:
-    static Application* _instance;
+    std::string _last_error = {};
+
+
 private:
     std::unique_ptr<DatabaseManager> _db_manager;
 
