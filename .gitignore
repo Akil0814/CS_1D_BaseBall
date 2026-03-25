@@ -60,6 +60,7 @@ Thumbs.db
 *vcxproj.*
 *.vs
 *.ib_pdb_index
+.idea/
 
 # Build directories
 .moc/
