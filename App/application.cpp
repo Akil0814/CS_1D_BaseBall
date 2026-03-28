@@ -16,7 +16,7 @@ bool Application::init()
 
     if (databaseManager()->init())
     {
-        _last_error = databaseManager()->lastError();
+        _last_error = databaseManager()->lastError().toStdString();
         std::cerr << _last_error << std::endl;
         return false;
     }

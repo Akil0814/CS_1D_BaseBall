@@ -64,7 +64,7 @@ QString AuthService::try_get_key_path()
     QString data_dir_path;
     for (int i = 0; i < 8; ++i)
     {
-        const QString candidate2 = dir.filePath("CS_1D_BaseBall/data");
+        const QString candidate2 = dir.filePath("App/data");
         if (QDir(candidate2).exists())
         {
             data_dir_path = QDir(candidate2).absolutePath();

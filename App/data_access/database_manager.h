@@ -35,15 +35,19 @@ public:
     [[nodiscard]] bool resetDatabase(bool remove_backup_if_success = false);
 
     [[nodiscard]] bool isOpen() const;
-    [[nodiscard]] const std::string lastError();
+    [[nodiscard]] const QString lastError() const;
+
+    QSqlDatabase getDatabaseObj() const;
 
 
 private:
+
     bool open_db();
     bool init_pragmas();
     bool init_schema();
     bool seed_if_empty();
-    bool import_from_csv_files(const QString& souvenirs_csv, const QString& distances_csv);
+
+    bool import_stadium_from_csv_files(const QString& stadium_csv);
     bool import_distances_csv_file(const QString& distances_csv);
 
 private:
@@ -56,6 +60,9 @@ private:
 private:
 
     bool _initialize = false;
+    QString _conn_name = "main";
+    QString _db_path;
+    mutable QString _last_error;
 };
 
 #endif // DATABASE_MANAGER_H
