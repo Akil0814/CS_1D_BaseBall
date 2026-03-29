@@ -24,7 +24,11 @@ public:
 private:
 
     void setKeyPath(const QString& key_path);
-    bool get_key_from_file(const std::string& filename, std::uint8_t& key_out);
+    bool loadAuthRecord(
+        const std::string& filename,
+        std::uint8_t& key_out,
+        std::string& user_enc_out,
+        std::string& password_enc_out);
     std::uint8_t obf_key(std::uint8_t k);
     void xor_inplace(std::string& s, unsigned char key);
     std::string xor_copy(const std::string& in, std::uint8_t key);

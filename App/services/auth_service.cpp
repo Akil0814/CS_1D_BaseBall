@@ -61,7 +61,11 @@ bool AuthService::read_blob(std::ifstream& in, std::string& s, std::uint32_t len
     return static_cast<bool>(in);
 }
 
-bool AuthService::get_key_from_file(const std::string& filename, std::uint8_t& key_out)
+bool AuthService::loadAuthRecord(
+    const std::string& filename,
+    std::uint8_t& key_out,
+    std::string& user_enc_out,
+    std::string& password_enc_out)
 {
     std::ifstream in(filename, std::ios::binary);
     if (!in)
@@ -94,8 +98,34 @@ bool AuthService::get_key_from_file(const std::string& filename, std::uint8_t& k
         return false;
     }
 
+    std::uint32_t u_len = 0;
+    if (!read_u32(in, u_len))
+    {
+        std::cerr << "read username length failed\n";
+        return false;
+    }
+
+    if (!read_blob(in, user_enc_out, u_len))
+    {
+        std::cerr << "read username blob failed\n";
+        return false;
+    }
+
+    std::uint32_t p_len = 0;
+    if (!read_u32(in, p_len))
+    {
+        std::cerr << "read password length failed\n";
+        return false;
+    }
+
+    if (!read_blob(in, password_enc_out, p_len))
+    {
+        std::cerr << "read password blob failed\n";
+        return false;
+    }
+
     in.seekg(0, std::ios::end);
-    auto size = in.tellg();
+    const auto size = in.tellg();
     if (size < 1)
     {
         std::cerr << "file empty\n";
@@ -129,51 +159,13 @@ bool AuthService::idVerify(std::string i_user_name, std::string i_password)
     std::cout << key_path << std::endl;
 
     std::uint8_t key = 0;
-    if (!get_key_from_file(key_path, key))
-    {
-        std::cerr << "get_key_from_file failed\n";
-        return false;
-    }
-
-    std::ifstream in(key_path, std::ios::binary);
-    if (!in)
-    {
-        std::cerr << "open key.dat failed\n";
-        return false;
-    }
-
-    std::uint32_t file_magic = 0;
-    if (!read_u32(in, file_magic)) return false;
-    if (file_magic != magic)
-    {
-        std::cerr << "bad file magic\n";
-        return false;
-    }
-
-    std::uint8_t file_version = 0;
-    if (!read_u8(in, file_version)) return false;
-    if (file_version != version)
-    {
-        std::cerr << "unsupported version\n";
-        return false;
-    }
-
-    std::uint32_t u_len = 0, p_len = 0;
-
-    if (!read_u32(in, u_len))
-        return false;
-
     std::string u_enc_stored;
-    if (!read_blob(in, u_enc_stored, u_len))
-        return false;
-
-
-    if (!read_u32(in, p_len))
-        return false;
-
     std::string p_enc_stored;
-    if (!read_blob(in, p_enc_stored, p_len))
+    if (!loadAuthRecord(key_path, key, u_enc_stored, p_enc_stored))
+    {
+        std::cerr << "loadAuthRecord failed\n";
         return false;
+    }
 
 
     const std::string u_enc_input = xor_copy(i_user_name, key);

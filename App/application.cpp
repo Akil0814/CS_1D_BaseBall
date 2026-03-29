@@ -196,6 +196,11 @@ TripPlanner* Application::tripPlanner() const
     return _trip_planner.get();
 }
 
+bool Application::isAuthAvailable() const
+{
+    return _auth_service != nullptr;
+}
+
 bool Application::isSouvenirAvailable() const
 {
     return souvenir_data_available && _souvenir_repo != nullptr;

@@ -28,6 +28,7 @@ public:
     AuthService* authService() const;
     TripPlanner* tripPlanner() const;
 
+    bool isAuthAvailable() const;
     bool isSouvenirAvailable() const;
     bool isDistanceAvailable() const;
     bool isTripPlannerAvailable() const;
