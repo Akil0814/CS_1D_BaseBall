@@ -4,6 +4,7 @@
 #define APP Application::instance()
 
 #include <memory>
+#include <QString>
 
 #include "data_access/database_manager.h"
 #include "data_access/distancere_pository.h"
@@ -16,18 +17,46 @@
 class Application
 {
 public:
+    // Return the global application instance.
     static Application* instance();
+    // Initialize application paths, services, and repositories.
     bool init();
 
+    // Return the database manager.
     DatabaseManager* databaseManager() const;
+    // Return the stadium repository.
     StadiumRepository* stadiumRepository() const;
-    SouvenirRepository* souvenirRepository() const;
-    DistanceRepository* distanceRepository() const;
+    // Return the souvenir repository if available.
+    SouvenirRepository* souvenirRepository();
+    // Return the distance repository if available.
+    DistanceRepository* distanceRepository();
 
-    AuthService* authService() const;
-    TripPlanner* tripPlanner() const;
+    // Return the auth service if available.
+    AuthService* authService();
+    // Return the trip planner if available.
+    TripPlanner* tripPlanner();
 
-    const std::string& lastError() const;
+    // Return whether the auth service is available.
+    bool isAuthAvailable() const;
+    // Return whether the souvenir repository is available.
+    bool isSouvenirAvailable() const;
+    // Return whether the distance repository is available.
+    bool isDistanceAvailable() const;
+    // Return whether the trip planner is available.
+    bool isTripPlannerAvailable() const;
+    // Return whether an error message is currently stored.
+    bool hasError() const;
+    // Return whether a warning message is currently stored.
+    bool hasWarning() const;
+
+    // Return the last recorded error message.
+    const QString& lastError() const;
+    // Return the last recorded warning message.
+    const QString& lastWarning() const;
+
+private:
+    bool resolvePaths();
+    void setUnavailableModuleError(const QString& module_name);
 
 private:
     Application();
@@ -38,8 +67,14 @@ private:
     ~Application();
 
 private:
-    std::string _last_error = {};
+    QString _last_error = {};
+    QString _last_warning = {};
+    QString _data_dir = {};
+    QString _db_path = {};
+    QString _key_path = {};
 
+    bool souvenir_data_available = false;
+    bool distance_data_available = false;
 
 private:
     std::unique_ptr<DatabaseManager> _db_manager;

@@ -1,27 +1,9 @@
 #ifndef DATABASE_MANAGER_H
 #define DATABASE_MANAGER_H
 
-#include<iostream>
-#include <algorithm>
-#include <functional>
-
-#include <QCoreApplication>
 #include <QSqlDatabase>
-#include <QStandardPaths>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QVector>
-#include <optional>
-#include <QString>
-#include <QVariant>
-#include <QVariantList>
-#include <QVariantMap>
-#include <QDir>
 #include <QSet>
-#include <QHash>
-#include <QFile>
-#include <QFileInfo>
-#include <QTextStream>
+#include <QString>
 
 class Application;
 
@@ -30,20 +12,59 @@ class DatabaseManager
     friend class Application;
 
 public:
-
+    // Initialize the database and required data.
     [[nodiscard]] bool init();
+
+    // Rebuild the database from scratch with optional backup cleanup.
     [[nodiscard]] bool resetDatabase(bool remove_backup_if_success = false);
 
+    // Return whether the database connection is currently open.
     [[nodiscard]] bool isOpen() const;
-    [[nodiscard]] const std::string lastError();
 
+    // Return whether the stadium module is available.
+    [[nodiscard]] bool isStadiumModuleAvailable() const;
+
+    // Return whether the souvenir module is available.
+    [[nodiscard]] bool isSouvenirModuleAvailable() const;
+
+    // Return whether the distance module is available.
+    [[nodiscard]] bool isDistanceModuleAvailable() const;
+
+    // Return the active database object for internal use.
+    [[nodiscard]] QSqlDatabase getDatabaseObj() const;
+
+    // Return the last recorded error message.
+    [[nodiscard]] const QString lastError() const;
+
+    // Return whether an error message is currently stored.
+    [[nodiscard]] bool hasError() const;
+
+    // Return the last recorded warning message.
+    const QString lastWarning() const;
+
+    // Return whether a warning message is currently stored.
+    bool hasWarning() const;
 
 private:
+    enum class SchemaCheckResult
+    {
+        Compatible,
+        Incompatible,
+        CheckFailed
+    };
+
+    bool init_impl(bool allow_auto_recover);
+    SchemaCheckResult check_table_schema_compatible();
+    void setDatabasePath(const QString& db_path);
+
     bool open_db();
     bool init_pragmas();
     bool init_schema();
     bool seed_if_empty();
-    bool import_from_csv_files(const QString& souvenirs_csv, const QString& distances_csv);
+    
+    bool upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db);
+
+    bool import_stadium_from_csv_files(const QString& stadium_csv);
     bool import_distances_csv_file(const QString& distances_csv);
 
 private:
@@ -55,7 +76,22 @@ private:
 
 private:
 
-    bool _initialize = false;
+    bool  _core_initialized = false;
+    bool  _fully_initialized = false;
+
+
+    bool _schema_stadiums_ready = false;
+    bool _schema_souvenirs_ready = false;
+    bool _schema_distances_ready = false;
+
+    bool _data_stadiums_ready = false;
+    bool _data_souvenirs_ready = false;
+    bool _data_distances_ready = false;
+
+    QString _conn_name = "main";
+    QString _db_path;
+    QString _last_error;
+    QString _last_warning;
 };
 
 #endif // DATABASE_MANAGER_H

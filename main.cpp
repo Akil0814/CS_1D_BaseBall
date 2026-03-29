@@ -6,18 +6,31 @@
 
 void test();
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
+
     QApplication a(argc, argv);
+
+    if (!APP->init()){
+        std::cerr<< "init failed:" << APP->lastError().toStdString() << std::endl;
+        throw std::runtime_error("init failed:");
+    }
+    if (APP->hasWarning())
+        std::cout << APP->lastWarning().toStdString() << std::endl;
+         
     MainWindow w;
+
     test();
     w.show();
     return a.exec();
 }
 
-void test()
-{
-    APP->init();
-    APP->authService()->idVerify("cs1d", "abc");
-    std::cout << "testing" << std::endl;
+void test(){
+
+    if (APP->isAuthAvailable()){
+
+        APP->authService()->idVerify("cs1d", "abc");
+        //or
+        //auto* auth = APP->authService();
+        //auth->idVerify("cs1d", "abc");
+    }
 }
