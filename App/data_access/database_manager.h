@@ -2,6 +2,7 @@
 #define DATABASE_MANAGER_H
 
 #include <QSqlDatabase>
+#include <QSet>
 #include <QString>
 
 class Application;
@@ -16,6 +17,9 @@ public:
     [[nodiscard]] bool resetDatabase(bool remove_backup_if_success = false);
 
     [[nodiscard]] bool isOpen() const;
+    [[nodiscard]] bool isStadiumsAvailable() const;
+    [[nodiscard]] bool isSouvenirsAvailable() const;
+    [[nodiscard]] bool isDistanceAvailable() const;
     [[nodiscard]] const QString lastError() const;
 
     QSqlDatabase getDatabaseObj() const;
@@ -29,6 +33,8 @@ private:
     bool init_schema();
     bool validate_schema_compatibility();
     bool seed_if_empty();
+    bool load_table_columns(QSqlDatabase& db, const QString& table_name, QSet<QString>& out_columns, QString& out_error) const;
+    bool upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db, QString& out_error);
 
     bool import_stadium_from_csv_files(const QString& stadium_csv);
     bool import_distances_csv_file(const QString& distances_csv);

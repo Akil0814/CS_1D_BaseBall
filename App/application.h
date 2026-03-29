@@ -27,6 +27,10 @@ public:
     AuthService* authService() const;
     TripPlanner* tripPlanner() const;
 
+    bool isSouvenirAvailable() const;
+    bool isDistanceAvailable() const;
+    bool isTripPlannerAvailable() const;
+
     const std::string& lastError() const;
 
 private:
@@ -40,6 +44,8 @@ private:
 private:
     std::string _last_error = {};
 
+    bool souvenir_data_available = false;
+    bool distance_data_available = false;
 
 private:
     std::unique_ptr<DatabaseManager> _db_manager;

@@ -1,4 +1,5 @@
 #include "database_manager.h"
+#include "csv_utils.h"
 
 #include <algorithm>
 #include <iostream>
@@ -8,22 +9,14 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
-#include <QRegularExpression>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSet>
 #include <QStringList>
-#include <QTextStream>
 #include <QVector>
 
 namespace
 {
-struct CsvTable
-{
-    QStringList header;
-    QVector<QStringList> rows;
-};
-
 struct DefaultSouvenir
 {
     const char* name;
@@ -39,329 +32,15 @@ const QVector<DefaultSouvenir> k_default_souvenirs =
     { "Team jersey", 199.99 }
 };
 
-bool load_table_columns(QSqlDatabase& db, const QString& table_name, QSet<QString>& out_columns, QString& out_error)
-{
-    out_columns.clear();
-
-    QSqlQuery q(db);
-    if (!q.exec("PRAGMA table_info(" + table_name + ");"))
-    {
-        out_error = q.lastError().text() + " | SQL: PRAGMA table_info(" + table_name + ")";
-        return false;
-    }
-
-    while (q.next())
-    {
-        const QString column_name = q.value("name").toString().trimmed().toLower();
-        if (!column_name.isEmpty())
-            out_columns.insert(column_name);
-    }
-
-    if (out_columns.isEmpty())
-    {
-        out_error = "Table is missing or has no columns: " + table_name;
-        return false;
-    }
-
-    return true;
 }
 
-QString normalize_key(const QString& input)
-{
-    QString out;
-    out.reserve(input.size());
-
-    bool last_was_sep = false;
-    for (const QChar ch : input.trimmed().toLower())
-    {
-        if (ch.isLetterOrNumber())
-        {
-            out.append(ch);
-            last_was_sep = false;
-            continue;
-        }
-
-        if (!last_was_sep)
-        {
-            out.append('_');
-            last_was_sep = true;
-        }
-    }
-
-    while (out.startsWith('_'))
-        out.remove(0, 1);
-    while (out.endsWith('_'))
-        out.chop(1);
-
-    return out;
-}
-
-QString normalize_stadium_name_key(const QString& input)
-{
-    QString out = input;
-    out.replace(QChar(0x2013), '-'); // en dash
-    out.replace(QChar(0x2014), '-'); // em dash
-    out.replace(QChar(0x00A0), ' '); // nbsp
-
-    return out.simplified().toLower();
-}
-
-QStringList parse_csv_line(const QString& line)
-{
-    QStringList fields;
-    QString current;
-    bool in_quotes = false;
-
-    for (int i = 0; i < line.size(); ++i)
-    {
-        const QChar ch = line[i];
-        if (ch == '"')
-        {
-            if (in_quotes && i + 1 < line.size() && line[i + 1] == '"')
-            {
-                current.append('"');
-                ++i;
-            }
-            else
-            {
-                in_quotes = !in_quotes;
-            }
-            continue;
-        }
-
-        if (ch == ',' && !in_quotes)
-        {
-            fields.push_back(current.trimmed());
-            current.clear();
-            continue;
-        }
-
-        current.append(ch);
-    }
-
-    fields.push_back(current.trimmed());
-    return fields;
-}
-
-bool read_csv_table(const QString& file_path, CsvTable& out_table, QString& out_error)
-{
-    QFile file(file_path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        out_error = "Cannot open csv file: " + file_path;
-        return false;
-    }
-
-    QTextStream in(&file);
-    bool header_set = false;
-
-    while (!in.atEnd())
-    {
-        const QString raw_line = in.readLine();
-        const QStringList row = parse_csv_line(raw_line);
-
-        bool all_empty = true;
-        for (const QString& cell : row)
-        {
-            if (!cell.trimmed().isEmpty())
-            {
-                all_empty = false;
-                break;
-            }
-        }
-        if (all_empty)
-            continue;
-
-        if (!header_set)
-        {
-            out_table.header = row;
-            if (!out_table.header.isEmpty())
-            {
-                out_table.header[0].remove(QChar(0xFEFF)); // UTF-8 BOM
-            }
-            header_set = true;
-            continue;
-        }
-
-        QStringList normalized_row = row;
-        while (normalized_row.size() < out_table.header.size())
-            normalized_row.push_back(QString());
-
-        out_table.rows.push_back(normalized_row);
-    }
-
-    if (!header_set)
-    {
-        out_error = "CSV has no header: " + file_path;
-        return false;
-    }
-
-    return true;
-}
-
-QHash<QString, int> build_header_index(const QStringList& header)
-{
-    QHash<QString, int> index_by_key;
-    for (int i = 0; i < header.size(); ++i)
-    {
-        const QString key = normalize_key(header[i]);
-        if (!key.isEmpty() && !index_by_key.contains(key))
-            index_by_key.insert(key, i);
-    }
-    return index_by_key;
-}
-
-int find_header_index(const QHash<QString, int>& header_index, const QVector<QString>& candidates)
-{
-    for (const QString& candidate : candidates)
-    {
-        const QString key = normalize_key(candidate);
-        if (header_index.contains(key))
-            return header_index.value(key);
-    }
-
-    return -1;
-}
-
-QString cell_at(const QStringList& row, int index)
-{
-    if (index < 0 || index >= row.size())
-        return QString();
-    return row[index].trimmed();
-}
-
-int parse_int_loose(const QString& text, int default_value = 0)
-{
-    QString cleaned;
-    cleaned.reserve(text.size());
-    for (const QChar ch : text)
-    {
-        if (ch.isDigit() || ch == '-')
-            cleaned.append(ch);
-    }
-
-    bool ok = false;
-    const int value = cleaned.toInt(&ok);
-    return ok ? value : default_value;
-}
-
-double parse_first_number(const QString& text, double default_value = 0.0)
-{
-    static const QRegularExpression number_re(R"([-+]?\d*\.?\d+)");
-    const QRegularExpressionMatch match = number_re.match(text);
-    if (!match.hasMatch())
-        return default_value;
-
-    bool ok = false;
-    const double value = match.captured(0).toDouble(&ok);
-    return ok ? value : default_value;
-}
-
-bool upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db, QString& out_error)
-{
-    QSqlQuery stadium_q(db);
-    if (!stadium_q.exec("SELECT stadium_id FROM stadiums;"))
-    {
-        out_error = stadium_q.lastError().text() + " | SQL: SELECT stadium_id FROM stadiums";
-        return false;
-    }
-
-    QVector<int> stadium_ids;
-    while (stadium_q.next())
-        stadium_ids.push_back(stadium_q.value(0).toInt());
-
-    if (stadium_ids.isEmpty())
-        return true;
-
-    if (!db.transaction())
-    {
-        out_error = db.lastError().text();
-        return false;
-    }
-
-    QSqlQuery upsert_q(db);
-    upsert_q.prepare(R"SQL(
-        INSERT INTO souvenirs(stadium_id, name, price)
-        VALUES (?, ?, ?)
-        ON CONFLICT(stadium_id, name) DO UPDATE SET
-            price = excluded.price;
-    )SQL");
-
-    for (const int stadium_id : stadium_ids)
-    {
-        for (const DefaultSouvenir& item : k_default_souvenirs)
-        {
-            upsert_q.bindValue(0, stadium_id);
-            upsert_q.bindValue(1, QString::fromUtf8(item.name));
-            upsert_q.bindValue(2, item.price);
-            if (!upsert_q.exec())
-            {
-                out_error = upsert_q.lastError().text();
-                db.rollback();
-                return false;
-            }
-        }
-    }
-
-    if (!db.commit())
-    {
-        out_error = db.lastError().text();
-        db.rollback();
-        return false;
-    }
-
-    return true;
-}
-
-}
+//-------------------------------------public--------------------------------------
 
 DatabaseManager::DatabaseManager(){}
 
 bool DatabaseManager::init()
 {
     return init_impl(true);
-}
-
-bool DatabaseManager::init_impl(bool allow_auto_recover)
-{
-    if (_initialize_all)
-        return true;
-
-    _last_error.clear();
-
-    if (!open_db())
-        return false;
-
-    if (!init_pragmas())
-        return false;
-
-    if (!init_schema())
-        return false;
-
-    if (!validate_schema_compatibility())
-    {
-        const QString schema_error = _last_error;
-        if (!allow_auto_recover)
-            return false;
-
-        if (!resetDatabase(false))
-        {
-            const QString reload_error = _last_error;
-            _last_error = "Schema mismatch detected: " + schema_error
-                + " | Auto-reload failed: " + reload_error;
-            return false;
-        }
-
-        _last_error = "Schema mismatch detected and auto-reload completed: " + schema_error;
-        return true;
-    }
-
-    if (!seed_if_empty())
-        return false;
-
-    _initialize_all = true;
-
-    return true;
 }
 
 bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
@@ -431,6 +110,21 @@ bool DatabaseManager::isOpen() const
     return db.isValid() && db.isOpen();
 }
 
+bool DatabaseManager::isStadiumsAvailable() const
+{
+    return _init_stadiums;
+}
+
+bool DatabaseManager::isSouvenirsAvailable() const
+{
+    return _init_souvenirs;
+}
+
+bool DatabaseManager::isDistanceAvailable() const
+{
+    return _init_distances;
+}
+
 const QString DatabaseManager::lastError() const
 {
 	return _last_error;
@@ -442,6 +136,50 @@ QSqlDatabase DatabaseManager::getDatabaseObj() const
         return QSqlDatabase();
 
     return QSqlDatabase::database(_conn_name, false);
+}
+
+//-------------------------------------private--------------------------------------
+
+bool DatabaseManager::init_impl(bool allow_auto_recover)
+{
+    if (_initialize_all)
+        return true;
+
+    _last_error.clear();
+
+    if (!open_db())
+        return false;
+
+    if (!init_pragmas())
+        return false;
+
+    if (!init_schema())
+        return false;
+
+    if (!validate_schema_compatibility())
+    {
+        const QString schema_error = _last_error;
+        if (!allow_auto_recover)
+            return false;
+
+        if (!resetDatabase(false))
+        {
+            const QString reload_error = _last_error;
+            _last_error = "Schema mismatch detected: " + schema_error
+                + " | Auto-reload failed: " + reload_error;
+            return false;
+        }
+
+        _last_error = "Schema mismatch detected and auto-reload completed: " + schema_error;
+        return true;
+    }
+
+    if (!seed_if_empty())
+        return false;
+
+    _initialize_all = true;
+
+    return true;
 }
 
 bool DatabaseManager::open_db()
@@ -494,8 +232,91 @@ bool DatabaseManager::open_db()
         return false;
     }
 
-    std::cout <<" "<<_db_path.toStdString() << std::endl;
+    std::cout << " " << _db_path.toStdString() << std::endl;
     std::cout << "1-Finish.Opening the database" << std::endl;
+
+    return true;
+}
+
+bool DatabaseManager::load_table_columns(QSqlDatabase& db, const QString& table_name, QSet<QString>& out_columns, QString& out_error) const
+{
+    out_columns.clear();
+
+    QSqlQuery q(db);
+    if (!q.exec("PRAGMA table_info(" + table_name + ");"))
+    {
+        out_error = q.lastError().text() + " | SQL: PRAGMA table_info(" + table_name + ")";
+        return false;
+    }
+
+    while (q.next())
+    {
+        const QString column_name = q.value("name").toString().trimmed().toLower();
+        if (!column_name.isEmpty())
+            out_columns.insert(column_name);
+    }
+
+    if (out_columns.isEmpty())
+    {
+        out_error = "Table is missing or has no columns: " + table_name;
+        return false;
+    }
+
+    return true;
+}
+
+bool DatabaseManager::upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db, QString& out_error)
+{
+    QSqlQuery stadium_q(db);
+    if (!stadium_q.exec("SELECT stadium_id FROM stadiums;"))
+    {
+        out_error = stadium_q.lastError().text() + " | SQL: SELECT stadium_id FROM stadiums";
+        return false;
+    }
+
+    QVector<int> stadium_ids;
+    while (stadium_q.next())
+        stadium_ids.push_back(stadium_q.value(0).toInt());
+
+    if (stadium_ids.isEmpty())
+        return true;
+
+    if (!db.transaction())
+    {
+        out_error = db.lastError().text();
+        return false;
+    }
+
+    QSqlQuery upsert_q(db);
+    upsert_q.prepare(R"SQL(
+        INSERT INTO souvenirs(stadium_id, name, price)
+        VALUES (?, ?, ?)
+        ON CONFLICT(stadium_id, name) DO UPDATE SET
+            price = excluded.price;
+    )SQL");
+
+    for (const int stadium_id : stadium_ids)
+    {
+        for (const DefaultSouvenir& item : k_default_souvenirs)
+        {
+            upsert_q.bindValue(0, stadium_id);
+            upsert_q.bindValue(1, QString::fromUtf8(item.name));
+            upsert_q.bindValue(2, item.price);
+            if (!upsert_q.exec())
+            {
+                out_error = upsert_q.lastError().text();
+                db.rollback();
+                return false;
+            }
+        }
+    }
+
+    if (!db.commit())
+    {
+        out_error = db.lastError().text();
+        db.rollback();
+        return false;
+    }
 
     return true;
 }
@@ -826,25 +647,25 @@ bool DatabaseManager::import_stadium_from_csv_files(const QString& stadium_csv)
 {
     _last_error.clear();
 
-    CsvTable csv;
+    CsvUtils::Table csv;
     QString csv_error;
-    if (!read_csv_table(stadium_csv, csv, csv_error))
+    if (!CsvUtils::readTable(stadium_csv, csv, csv_error))
     {
         _last_error = csv_error;
         return false;
     }
 
-    const QHash<QString, int> header_index = build_header_index(csv.header);
-    const int team_idx = find_header_index(header_index, { "team_name", "team" });
-    const int stadium_idx = find_header_index(header_index, { "stadium_name", "stadium" });
-    const int capacity_idx = find_header_index(header_index, { "seating_capacity" });
-    const int location_idx = find_header_index(header_index, { "location" });
-    const int surface_idx = find_header_index(header_index, { "playing_surface" });
-    const int league_idx = find_header_index(header_index, { "league" });
-    const int date_opened_idx = find_header_index(header_index, { "date_opened" });
-    const int center_field_idx = find_header_index(header_index, { "distance_to_center_field" });
-    const int typology_idx = find_header_index(header_index, { "ballpark_typology" });
-    const int roof_type_idx = find_header_index(header_index, { "roof_type" });
+    const QHash<QString, int> header_index = CsvUtils::buildHeaderIndex(csv.header);
+    const int team_idx = CsvUtils::findHeaderIndex(header_index, { "team_name", "team" });
+    const int stadium_idx = CsvUtils::findHeaderIndex(header_index, { "stadium_name", "stadium" });
+    const int capacity_idx = CsvUtils::findHeaderIndex(header_index, { "seating_capacity" });
+    const int location_idx = CsvUtils::findHeaderIndex(header_index, { "location" });
+    const int surface_idx = CsvUtils::findHeaderIndex(header_index, { "playing_surface" });
+    const int league_idx = CsvUtils::findHeaderIndex(header_index, { "league" });
+    const int date_opened_idx = CsvUtils::findHeaderIndex(header_index, { "date_opened" });
+    const int center_field_idx = CsvUtils::findHeaderIndex(header_index, { "distance_to_center_field" });
+    const int typology_idx = CsvUtils::findHeaderIndex(header_index, { "ballpark_typology" });
+    const int roof_type_idx = CsvUtils::findHeaderIndex(header_index, { "roof_type" });
 
     if (team_idx < 0 || stadium_idx < 0)
     {
@@ -901,28 +722,28 @@ bool DatabaseManager::import_stadium_from_csv_files(const QString& stadium_csv)
 
     for (const QStringList& row : csv.rows)
     {
-        const QString team_name = cell_at(row, team_idx);
-        const QString stadium_name = cell_at(row, stadium_idx);
+        const QString team_name = CsvUtils::cellAt(row, team_idx);
+        const QString stadium_name = CsvUtils::cellAt(row, stadium_idx);
         if (team_name.isEmpty() || stadium_name.isEmpty())
             continue;
 
-        const QString capacity_txt = cell_at(row, capacity_idx);
-        const QString location = cell_at(row, location_idx);
-        const QString playing_surface = cell_at(row, surface_idx);
-        const QString league = cell_at(row, league_idx);
-        const QString date_opened_txt = cell_at(row, date_opened_idx);
-        const QString center_field_raw = cell_at(row, center_field_idx);
-        const QString typology = cell_at(row, typology_idx);
-        const QString roof_type = cell_at(row, roof_type_idx);
+        const QString capacity_txt = CsvUtils::cellAt(row, capacity_idx);
+        const QString location = CsvUtils::cellAt(row, location_idx);
+        const QString playing_surface = CsvUtils::cellAt(row, surface_idx);
+        const QString league = CsvUtils::cellAt(row, league_idx);
+        const QString date_opened_txt = CsvUtils::cellAt(row, date_opened_idx);
+        const QString center_field_raw = CsvUtils::cellAt(row, center_field_idx);
+        const QString typology = CsvUtils::cellAt(row, typology_idx);
+        const QString roof_type = CsvUtils::cellAt(row, roof_type_idx);
 
         insert_q.bindValue(0, team_name);
         insert_q.bindValue(1, stadium_name);
-        insert_q.bindValue(2, parse_int_loose(capacity_txt, 0));
+        insert_q.bindValue(2, CsvUtils::parseIntLoose(capacity_txt, 0));
         insert_q.bindValue(3, location);
         insert_q.bindValue(4, playing_surface);
         insert_q.bindValue(5, league);
-        insert_q.bindValue(6, parse_int_loose(date_opened_txt, 0));
-        insert_q.bindValue(7, parse_first_number(center_field_raw, 0.0));
+        insert_q.bindValue(6, CsvUtils::parseIntLoose(date_opened_txt, 0));
+        insert_q.bindValue(7, CsvUtils::parseFirstNumber(center_field_raw, 0.0));
         insert_q.bindValue(8, center_field_raw);
         insert_q.bindValue(9, typology);
         insert_q.bindValue(10, roof_type);
@@ -950,18 +771,18 @@ bool DatabaseManager::import_distances_csv_file(const QString& distances_csv)
 {
     _last_error.clear();
 
-    CsvTable csv;
+    CsvUtils::Table csv;
     QString csv_error;
-    if (!read_csv_table(distances_csv, csv, csv_error))
+    if (!CsvUtils::readTable(distances_csv, csv, csv_error))
     {
         _last_error = csv_error;
         return false;
     }
 
-    const QHash<QString, int> header_index = build_header_index(csv.header);
-    const int from_idx = find_header_index(header_index, { "originated_stadtium", "originated_stadium", "h1", "from_stadium", "from" });
-    const int to_idx = find_header_index(header_index, { "destination_stadtium", "destination_stadium", "team", "to_stadium", "to" });
-    const int distance_idx = find_header_index(header_index, { "distance", "mileage", "miles" });
+    const QHash<QString, int> header_index = CsvUtils::buildHeaderIndex(csv.header);
+    const int from_idx = CsvUtils::findHeaderIndex(header_index, { "originated_stadtium", "originated_stadium", "h1", "from_stadium", "from" });
+    const int to_idx = CsvUtils::findHeaderIndex(header_index, { "destination_stadtium", "destination_stadium", "team", "to_stadium", "to" });
+    const int distance_idx = CsvUtils::findHeaderIndex(header_index, { "distance", "mileage", "miles" });
 
     if (from_idx < 0 || to_idx < 0 || distance_idx < 0)
     {
@@ -989,7 +810,7 @@ bool DatabaseManager::import_distances_csv_file(const QString& distances_csv)
         {
             const int stadium_id = stadium_q.value(0).toInt();
             const QString stadium_name = stadium_q.value(1).toString();
-            stadium_id_by_name.insert(normalize_stadium_name_key(stadium_name), stadium_id);
+            stadium_id_by_name.insert(CsvUtils::normalizeStadiumNameKey(stadium_name), stadium_id);
         }
     }
 
@@ -1009,15 +830,15 @@ bool DatabaseManager::import_distances_csv_file(const QString& distances_csv)
 
     for (const QStringList& row : csv.rows)
     {
-        const QString from_name = cell_at(row, from_idx);
-        const QString to_name = cell_at(row, to_idx);
-        const QString distance_txt = cell_at(row, distance_idx);
+        const QString from_name = CsvUtils::cellAt(row, from_idx);
+        const QString to_name = CsvUtils::cellAt(row, to_idx);
+        const QString distance_txt = CsvUtils::cellAt(row, distance_idx);
 
         if (from_name.isEmpty() || to_name.isEmpty())
             continue;
 
-        const QString from_key = normalize_stadium_name_key(from_name);
-        const QString to_key = normalize_stadium_name_key(to_name);
+        const QString from_key = CsvUtils::normalizeStadiumNameKey(from_name);
+        const QString to_key = CsvUtils::normalizeStadiumNameKey(to_name);
 
         if (!stadium_id_by_name.contains(from_key) || !stadium_id_by_name.contains(to_key))
         {
@@ -1033,7 +854,7 @@ bool DatabaseManager::import_distances_csv_file(const QString& distances_csv)
 
         const int stadium_a_id = std::min(from_id, to_id);
         const int stadium_b_id = std::max(from_id, to_id);
-        const double distance_miles = parse_first_number(distance_txt, -1.0);
+        const double distance_miles = CsvUtils::parseFirstNumber(distance_txt, -1.0);
         if (distance_miles < 0.0)
             continue;
 
