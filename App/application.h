@@ -31,7 +31,8 @@ public:
     bool isDistanceAvailable() const;
     bool isTripPlannerAvailable() const;
 
-    const std::string& lastError() const;
+    const QString& lastError() const;
+    const QString& lastWarning() const;
 
 private:
     Application();
@@ -42,7 +43,8 @@ private:
     ~Application();
 
 private:
-    std::string _last_error = {};
+    QString _last_error = {};
+    QString _last_warning = {};
 
     bool souvenir_data_available = false;
     bool distance_data_available = false;

@@ -11,8 +11,12 @@ int main(int argc, char *argv[]){
     QApplication a(argc, argv);
     MainWindow w;
     if (!APP->init()){
-        std::cerr<< "init failed:" << APP->lastError() << std::endl;
+        std::cerr<< "init failed:" << APP->lastError().toStdString() << std::endl;
         throw std::runtime_error("init failed:");
+    }
+    if (APP->databaseManager()->hasWarning())
+    {
+        std::cout << APP->lastWarning().toStdString() << std::endl;
     }
 
     test();

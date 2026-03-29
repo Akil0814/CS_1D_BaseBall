@@ -13,26 +13,26 @@ Application::~Application() = default;
 bool Application::init()
 {
     _last_error.clear();
+    _last_warning.clear();
 
     if(!_db_manager)
         _db_manager = std::unique_ptr<DatabaseManager>(new DatabaseManager());
 
     if (!databaseManager()->init())
     {
-        _last_error = databaseManager()->lastError().toStdString();
-        std::cerr << _last_error << std::endl;
-
-        if(databaseManager()->isStadiumsAvailable()==false)
+        _last_error = databaseManager()->lastError();
+        if(databaseManager()->isStadiumModuleAvailable()==false)
             return false;
     }
+    _last_warning = databaseManager()->lastWarning();
 
-    souvenir_data_available = databaseManager()->isSouvenirsAvailable();
+    souvenir_data_available = databaseManager()->isSouvenirModuleAvailable();
     if (!souvenir_data_available)
-        _last_error += "\nSouvenirRepository not available";
+        _last_warning += "\nSouvenirRepository not available";
 
-    distance_data_available = databaseManager()->isDistanceAvailable();
+    distance_data_available = databaseManager()->isDistanceModuleAvailable();
     if (!distance_data_available)
-        _last_error += "\nDistanceRepository and TripPlanner not available";
+        _last_warning += "\nDistanceRepository and TripPlanner not available";
     
     if(!_stadium_repo)
         _stadium_repo = std::unique_ptr<StadiumRepository>(new StadiumRepository());
@@ -65,9 +65,14 @@ bool Application::init()
     return true;
 }
 
-const std::string& Application::lastError() const
+const QString& Application::lastError() const
 {
     return _last_error;
+}
+
+const QString& Application::lastWarning() const
+{
+    return _last_warning;
 }
 
 DatabaseManager* Application::databaseManager() const
