@@ -29,12 +29,12 @@ bool Application::init()
         _db_manager = std::unique_ptr<DatabaseManager>(new DatabaseManager());
     _db_manager->setDatabasePath(_db_path);
 
-    const bool database_init_ok = databaseManager()->init();
-    const QString database_error = databaseManager()->lastError().trimmed();
+    const bool database_init_ok = _db_manager.get()->init();
+    const QString database_error = _db_manager.get()->lastError().trimmed();
 
     if (!database_init_ok)
     {
-        if(databaseManager()->isStadiumModuleAvailable()==false)
+        if(_db_manager.get()->isStadiumModuleAvailable()==false)
         {
             _last_error = database_error.isEmpty()
                 ? "database initialization failed"
@@ -47,24 +47,24 @@ bool Application::init()
 
     MessageUtils::appendUniqueMessage(warnings, path_warning);
 
-    if (databaseManager()->hasWarning())
-        MessageUtils::appendUniqueMessage(warnings, databaseManager()->lastWarning());
+    if (_db_manager.get()->hasWarning())
+        MessageUtils::appendUniqueMessage(warnings, _db_manager.get()->lastWarning());
 
-    souvenir_data_available = databaseManager()->isSouvenirModuleAvailable();
+    souvenir_data_available = _db_manager.get()->isSouvenirModuleAvailable();
     if (!souvenir_data_available)
         MessageUtils::appendUniqueMessage(warnings, "SouvenirRepository not available");
 
-    distance_data_available = databaseManager()->isDistanceModuleAvailable();
+    distance_data_available = _db_manager.get()->isDistanceModuleAvailable();
     if (!distance_data_available)
         MessageUtils::appendUniqueMessage(warnings, "DistanceRepository and TripPlanner not available");
     
     if(!_stadium_repo)
-        _stadium_repo = std::unique_ptr<StadiumRepository>(new StadiumRepository());
+        _stadium_repo = std::unique_ptr<StadiumRepository>(new StadiumRepository(*_db_manager));
 
     if (souvenir_data_available)
     {
         if (!_souvenir_repo)
-        _souvenir_repo = std::unique_ptr<SouvenirRepository>(new SouvenirRepository());
+        _souvenir_repo = std::unique_ptr<SouvenirRepository>(new SouvenirRepository(*_db_manager));
     }
     else
         _souvenir_repo.reset();
@@ -72,7 +72,7 @@ bool Application::init()
     if (distance_data_available)
     {
         if(!_distance_repo)
-            _distance_repo = std::unique_ptr<DistanceRepository>(new DistanceRepository());
+            _distance_repo = std::unique_ptr<DistanceRepository>(new DistanceRepository(*_db_manager));
 
         if (!_trip_planner)
             _trip_planner = std::unique_ptr<TripPlanner>(new TripPlanner());
@@ -171,12 +171,7 @@ bool Application::hasWarning() const
     return !_last_warning.trimmed().isEmpty();
 }
 
-DatabaseManager* Application::databaseManager() const
-{
-    return _db_manager.get();
-}
-
-StadiumRepository* Application::stadiumRepository() const
+StadiumRepository* Application::stadiumRepository()
 {
     return _stadium_repo.get();
 }

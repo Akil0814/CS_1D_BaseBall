@@ -31,7 +31,7 @@ public:
     [[nodiscard]] bool isDistanceModuleAvailable() const;
 
     // Return the active database object for internal use.
-    [[nodiscard]] QSqlDatabase getDatabaseObj() const;
+    [[nodiscard]] QSqlDatabase getDatabaseObj();
 
     // Return the last recorded error message.
     [[nodiscard]] const QString lastError() const;

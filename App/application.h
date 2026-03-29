@@ -22,10 +22,8 @@ public:
     // Initialize application paths, services, and repositories.
     bool init();
 
-    // Return the database manager.
-    DatabaseManager* databaseManager() const;
     // Return the stadium repository.
-    StadiumRepository* stadiumRepository() const;
+    StadiumRepository* stadiumRepository();
     // Return the souvenir repository if available.
     SouvenirRepository* souvenirRepository();
     // Return the distance repository if available.

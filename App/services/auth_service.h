@@ -18,11 +18,9 @@ class AuthService
     friend class Application;
 
 public:
-
     bool idVerify(std::string in_user_name, std::string in_password);
 
 private:
-
     void setKeyPath(const QString& key_path);
     bool loadAuthRecord(
         const std::string& filename,
