@@ -14,7 +14,7 @@ bool Application::init()
 {
     _db_manager = std::unique_ptr<DatabaseManager>(new DatabaseManager());
 
-    if (databaseManager()->init())
+    if (!databaseManager()->init())
     {
         _last_error = databaseManager()->lastError().toStdString();
         std::cerr << _last_error << std::endl;

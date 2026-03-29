@@ -495,6 +495,7 @@ bool DatabaseManager::init_schema()
 
 bool DatabaseManager::seed_if_empty()
 {
+    std::cout << "4-Start Loading data" << std::endl;
     _last_error.clear();
 
     QSqlDatabase db = QSqlDatabase::database(_conn_name);
@@ -546,6 +547,8 @@ bool DatabaseManager::seed_if_empty()
         if (!import_distances_csv_file(distances_csv))
             return false;
     }
+
+    std::cout << "4-Finish Loading data" << std::endl;
 
     return true;
 }
