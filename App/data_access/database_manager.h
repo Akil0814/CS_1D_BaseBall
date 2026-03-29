@@ -23,9 +23,11 @@ public:
 
 private:
 
+    bool init_impl(bool allow_auto_recover);
     bool open_db();
     bool init_pragmas();
     bool init_schema();
+    bool validate_schema_compatibility();
     bool seed_if_empty();
 
     bool import_stadium_from_csv_files(const QString& stadium_csv);
@@ -40,7 +42,12 @@ private:
 
 private:
 
-    bool _initialize = false;
+    bool _initialize_all = false;
+
+    bool _init_stadiums = false;
+    bool _init_souvenirs = false;
+    bool _init_distances = false;
+
     QString _conn_name = "main";
     QString _db_path;
     mutable QString _last_error;

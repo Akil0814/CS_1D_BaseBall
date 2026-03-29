@@ -11,6 +11,7 @@
 #include <QRegularExpression>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSet>
 #include <QStringList>
 #include <QTextStream>
 #include <QVector>
@@ -37,6 +38,33 @@ const QVector<DefaultSouvenir> k_default_souvenirs =
     { "Autographed baseball", 29.99 },
     { "Team jersey", 199.99 }
 };
+
+bool load_table_columns(QSqlDatabase& db, const QString& table_name, QSet<QString>& out_columns, QString& out_error)
+{
+    out_columns.clear();
+
+    QSqlQuery q(db);
+    if (!q.exec("PRAGMA table_info(" + table_name + ");"))
+    {
+        out_error = q.lastError().text() + " | SQL: PRAGMA table_info(" + table_name + ")";
+        return false;
+    }
+
+    while (q.next())
+    {
+        const QString column_name = q.value("name").toString().trimmed().toLower();
+        if (!column_name.isEmpty())
+            out_columns.insert(column_name);
+    }
+
+    if (out_columns.isEmpty())
+    {
+        out_error = "Table is missing or has no columns: " + table_name;
+        return false;
+    }
+
+    return true;
+}
 
 QString normalize_key(const QString& input)
 {
@@ -291,8 +319,15 @@ DatabaseManager::DatabaseManager(){}
 
 bool DatabaseManager::init()
 {
-    if (_initialize)
+    return init_impl(true);
+}
+
+bool DatabaseManager::init_impl(bool allow_auto_recover)
+{
+    if (_initialize_all)
         return true;
+
+    _last_error.clear();
 
     if (!open_db())
         return false;
@@ -303,20 +338,37 @@ bool DatabaseManager::init()
     if (!init_schema())
         return false;
 
+    if (!validate_schema_compatibility())
+    {
+        const QString schema_error = _last_error;
+        if (!allow_auto_recover)
+            return false;
+
+        if (!resetDatabase(false))
+        {
+            const QString reload_error = _last_error;
+            _last_error = "Schema mismatch detected: " + schema_error
+                + " | Auto-reload failed: " + reload_error;
+            return false;
+        }
+
+        _last_error = "Schema mismatch detected and auto-reload completed: " + schema_error;
+        return true;
+    }
+
     if (!seed_if_empty())
         return false;
 
-    _initialize = true;
+    _initialize_all = true;
 
     return true;
-
 }
 
 bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
 {
     _last_error.clear();
 
-    _initialize = false;
+    _initialize_all = false;
 
     if (QSqlDatabase::contains(_conn_name))
     {
@@ -337,8 +389,8 @@ bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
         if (!QFile::rename(_db_path, backup))
         {
             _last_error = "failed to backup db file";
-            _initialize = false;
-            if (init())
+            _initialize_all = false;
+            if (init_impl(false))
                 _last_error += ", but database is still usable";
             else
                 _last_error += ", and database is not usable";
@@ -348,14 +400,14 @@ bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
     }
 
 
-    if (!init())
+    if (!init_impl(false))
     {
         QFile::remove(_db_path);
         QFile::rename(_db_path + time + ".bak", _db_path);
 
-        _initialize = false;
+        _initialize_all = false;
         _last_error = "failed to initialize new database";
-        if (init())
+        if (init_impl(false))
             _last_error += ", but restored backup successfully";
         else
             _last_error += ", and failed to restore backup";
@@ -626,6 +678,87 @@ bool DatabaseManager::init_schema()
     }
 
     std::cout << "3-Finish Building the table structure" << std::endl;
+
+    return true;
+}
+
+bool DatabaseManager::validate_schema_compatibility()
+{
+    _last_error.clear();
+
+    QSqlDatabase db = QSqlDatabase::database(_conn_name);
+    if (!db.isValid() || !db.isOpen())
+    {
+        _last_error = "Database is not open.";
+        return false;
+    }
+
+    const QHash<QString, QVector<QString>> required_columns =
+    {
+        {
+            "stadiums",
+            {
+                "stadium_id",
+                "team_name",
+                "stadium_name",
+                "seating_capacity",
+                "location",
+                "playing_surface",
+                "league",
+                "date_opened",
+                "distance_to_center_field_ft",
+                "distance_to_center_field_raw",
+                "ballpark_typology",
+                "roof_type",
+                "is_expansion"
+            }
+        },
+        {
+            "souvenirs",
+            {
+                "souvenir_id",
+                "stadium_id",
+                "name",
+                "price"
+            }
+        },
+        {
+            "stadium_distances",
+            {
+                "stadium_a_id",
+                "stadium_b_id",
+                "distance_miles"
+            }
+        }
+    };
+
+    for (auto it = required_columns.constBegin(); it != required_columns.constEnd(); ++it)
+    {
+        const QString& table_name = it.key();
+        const QVector<QString>& columns = it.value();
+
+        QSet<QString> actual_columns;
+        QString schema_read_error;
+        if (!load_table_columns(db, table_name, actual_columns, schema_read_error))
+        {
+            _last_error = "[schema-check] " + schema_read_error;
+            return false;
+        }
+
+        QStringList missing_columns;
+        for (const QString& expected_col : columns)
+        {
+            if (!actual_columns.contains(expected_col))
+                missing_columns.push_back(expected_col);
+        }
+
+        if (!missing_columns.isEmpty())
+        {
+            _last_error = "[schema-check] Table '" + table_name
+                + "' missing columns: " + missing_columns.join(", ");
+            return false;
+        }
+    }
 
     return true;
 }
