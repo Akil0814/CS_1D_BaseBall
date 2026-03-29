@@ -146,6 +146,11 @@ bool Application::resolvePaths()
     return true;
 }
 
+void Application::setUnavailableModuleError(const QString& module_name)
+{
+    _last_error = module_name.trimmed() + " is not available.";
+}
+
 const QString& Application::lastError() const
 {
     return _last_error;
@@ -176,23 +181,43 @@ StadiumRepository* Application::stadiumRepository() const
     return _stadium_repo.get();
 }
 
-SouvenirRepository* Application::souvenirRepository() const
+SouvenirRepository* Application::souvenirRepository()
 {
+    if (!_souvenir_repo)
+    {
+        setUnavailableModuleError("SouvenirRepository");
+        return nullptr;
+    }
     return _souvenir_repo.get();
 }
 
-DistanceRepository* Application::distanceRepository() const
+DistanceRepository* Application::distanceRepository()
 {
+    if (!_distance_repo)
+    {
+        setUnavailableModuleError("DistanceRepository");
+        return nullptr;
+    }
     return _distance_repo.get();
 }
 
-AuthService* Application::authService() const
+AuthService* Application::authService()
 {
+    if (!_auth_service)
+    {
+        setUnavailableModuleError("AuthService");
+        return nullptr;
+    }
     return _auth_service.get();
 }
 
-TripPlanner* Application::tripPlanner() const
+TripPlanner* Application::tripPlanner()
 {
+    if (!_trip_planner)
+    {
+        setUnavailableModuleError("TripPlanner");
+        return nullptr;
+    }
     return _trip_planner.get();
 }
 

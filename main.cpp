@@ -26,5 +26,11 @@ int main(int argc, char *argv[]){
 
 void test(){
 
-    std::cout << "testing" << std::endl;
+    if (APP->isAuthAvailable()){
+
+        APP->authService()->idVerify("cs1d", "abc");
+        //or
+        //auto* auth = APP->authService();
+        //auth->idVerify("cs1d", "abc");
+    }
 }
