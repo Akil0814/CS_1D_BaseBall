@@ -148,7 +148,7 @@ bool Application::resolvePaths()
 
 void Application::setUnavailableModuleError(const QString& module_name)
 {
-    _last_error = module_name.trimmed() + " is not available.";
+    _last_error = module_name.trimmed() + " is not available, it's nullptr.";
 }
 
 const QString& Application::lastError() const
