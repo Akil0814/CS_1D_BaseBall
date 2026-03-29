@@ -1,5 +1,6 @@
 #include "database_manager.h"
-#include "csv_utils.h"
+#include "../utils/message_utils.h"
+#include "../utils/csv_utils.h"
 
 #include <algorithm>
 #include <iostream>
@@ -43,6 +44,11 @@ bool DatabaseManager::init()
     return init_impl(true);
 }
 
+void DatabaseManager::setDatabasePath(const QString& db_path)
+{
+    _db_path = db_path;
+}
+
 bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
 {
     _last_error.clear();
@@ -80,15 +86,21 @@ bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
 
     if (QFile::exists(_db_path))
     {
-        if (!QFile::rename(_db_path, backup_path))
+        QFile db_file(_db_path);
+        if (!db_file.rename(backup_path))
         {
-            _last_error = "failed to backup db file";
+            const QString backup_error_detail = db_file.errorString().trimmed();
+            const bool database_usable = init_impl(false);
+            const QString retry_error = _last_error.trimmed();
+
+            _last_error = "failed to back up database file";
+            MessageUtils::appendMessage(_last_error, backup_error_detail);
+            MessageUtils::appendMessage(_last_error, database_usable
+                ? "database remains usable after retry"
+                : "database is not usable after retry");
+            MessageUtils::appendMessage(_last_error, retry_error);
             _core_initialized = false;
             _fully_initialized = false;
-            if (init_impl(false))
-                _last_error += ", but database is still usable";
-            else
-                _last_error += ", and database is not usable";
 
             return false;
         }
@@ -99,20 +111,53 @@ bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
 
     if (!init_impl(false))
     {
+        const QString new_database_error = _last_error.trimmed();
+        const QString new_database_warning = _last_warning.trimmed();
+
         close_connection();
         QFile::remove(_db_path);
-        const bool restored = has_backup && QFile::rename(backup_path, _db_path);
+        bool restored = false;
+        QString restore_error_detail;
+        if (has_backup)
+        {
+            QFile backup_file(backup_path);
+            restored = backup_file.rename(_db_path);
+            if (!restored)
+                restore_error_detail = backup_file.errorString().trimmed();
+        }
 
         _core_initialized = false;
         _fully_initialized = false;
         _last_error = "failed to initialize new database";
-        if (has_backup && !restored)
-            _last_error += ", failed to restore backup file";
+        MessageUtils::appendMessage(_last_error, new_database_error);
+        MessageUtils::appendMessage(_last_warning, new_database_warning);
 
-        if (init_impl(false))
-            _last_error += restored ? ", but restored backup successfully" : ", but database is usable after retry";
-        else
-            _last_error += restored ? ", and failed after restoring backup" : ", and failed to recover database";
+        if (has_backup && !restored)
+        {
+            MessageUtils::appendMessage(_last_error, "failed to restore backup file");
+            MessageUtils::appendMessage(_last_error, restore_error_detail);
+        }
+
+        const bool recovered = init_impl(false);
+        const QString recovery_error = _last_error.trimmed();
+        const QString recovery_warning = _last_warning.trimmed();
+
+        _last_error = "failed to initialize new database";
+        MessageUtils::appendMessage(_last_error, new_database_error);
+        if (has_backup && !restored)
+        {
+            MessageUtils::appendMessage(_last_error, "failed to restore backup file");
+            MessageUtils::appendMessage(_last_error, restore_error_detail);
+        }
+        MessageUtils::appendMessage(_last_error, recovered
+            ? (restored ? "restored backup successfully" : "database is usable after retry")
+            : (restored ? "failed after restoring backup" : "failed to recover database"));
+        MessageUtils::appendMessage(_last_error, recovery_error);
+
+        QStringList warnings;
+        MessageUtils::appendUniqueMessage(warnings, new_database_warning);
+        MessageUtils::appendUniqueMessage(warnings, recovery_warning);
+        _last_warning = MessageUtils::joinMessages(warnings);
 
         return false;
     }
@@ -202,12 +247,17 @@ bool DatabaseManager::init_impl(bool allow_auto_recover)
 
     if (allow_auto_recover == true)
     {
-        if (!is_table_schema_compatible())
+        const SchemaCheckResult schema_check_result = check_table_schema_compatible();
+
+        if (schema_check_result == SchemaCheckResult::Incompatible)
         {
             if (!resetDatabase(false))
                 return false;
             return true;
         }
+
+        if (schema_check_result == SchemaCheckResult::CheckFailed)
+            return false;
     }
 
     if(!init_schema())
@@ -232,37 +282,11 @@ bool DatabaseManager::open_db()
     _last_error.clear();
     _last_warning.clear();
 
-    QDir dir(QDir::current());
-
-    QString data_dir_path;
-    for (int i = 0; i < 8; ++i)
+    if (_db_path.trimmed().isEmpty())
     {
-        const QString candidate = dir.filePath("data");
-        if (QDir(candidate).exists())
-        {
-            data_dir_path = QDir(candidate).absolutePath();
-            break;
-        }
-
-        const QString candidate2 = dir.filePath("App/data");
-        if (QDir(candidate2).exists())
-        {
-            data_dir_path = QDir(candidate2).absolutePath();
-            break;
-        }
-
-        if (!dir.cdUp())
-            break;
+        _last_error = "Database path is not configured.";
+        return false;
     }
-
-    if (data_dir_path.isEmpty())
-    {
-        const QString fallback = QDir::current().filePath("data");
-        QDir().mkpath(fallback);
-        data_dir_path = QDir(fallback).absolutePath();
-    }
-
-    _db_path = QDir(data_dir_path).filePath("BaseBall_data.db");
 
     QSqlDatabase db = QSqlDatabase::contains(_conn_name)
         ? QSqlDatabase::database(_conn_name)
@@ -443,7 +467,7 @@ bool DatabaseManager::init_schema()
         "CREATE INDEX IF NOT EXISTS idx_souvenirs_stadium_id ON souvenirs(stadium_id);"
         }))
     {
-        warnings.push_back("souvenir schema degraded: " + _last_error);
+        MessageUtils::appendUniqueMessage(warnings, "souvenir schema degraded: " + _last_error);
         _last_error.clear();
         _schema_souvenirs_ready = false;
     }
@@ -472,14 +496,14 @@ bool DatabaseManager::init_schema()
             "CREATE INDEX IF NOT EXISTS idx_distances_b ON stadium_distances(stadium_b_id);"
         }))
     {
-        warnings.push_back("distance schema degraded: " + _last_error);
+        MessageUtils::appendUniqueMessage(warnings, "distance schema degraded: " + _last_error);
         _last_error.clear();
         _schema_distances_ready = false;
     }
     else
         _schema_distances_ready = true;
 
-    _last_warning = warnings.join(" | ");
+    _last_warning = MessageUtils::joinMessages(warnings);
 
     std::cout << "3-Finish Building the table structure" << std::endl;//testing
 
@@ -490,8 +514,10 @@ bool DatabaseManager::seed_if_empty()
 {
     std::cout << "4-Start Loading data" << std::endl;//testing
 
+    const QString inherited_warning = _last_warning.trimmed();
+
     _last_error.clear();
-    _last_warning.clear();
+    _last_warning = inherited_warning;
 
     _data_stadiums_ready = false;
     _data_souvenirs_ready = false;
@@ -543,7 +569,7 @@ bool DatabaseManager::seed_if_empty()
         distance_count = table_row_count("stadium_distances");
         if (distance_count == -1)
         {
-            warnings.push_back("distance data degraded: " + _last_error);
+            MessageUtils::appendUniqueMessage(warnings, "distance data degraded: " + _last_error);
             _last_error.clear();
             _data_distances_ready = false;
         }
@@ -572,7 +598,7 @@ bool DatabaseManager::seed_if_empty()
     {
         if (!upsert_default_souvenirs_for_all_stadiums(db))
         {
-            warnings.push_back("souvenir data degraded: " + _last_error);
+            MessageUtils::appendUniqueMessage(warnings, "souvenir data degraded: " + _last_error);
             _last_error.clear();
             _data_souvenirs_ready = false;
         }
@@ -589,17 +615,24 @@ bool DatabaseManager::seed_if_empty()
         {
             if (!import_distances_csv_file(distances_csv))
             {
-                warnings.push_back("distance data degraded: " + _last_error);
+                MessageUtils::appendUniqueMessage(warnings, "distance data degraded: " + _last_error);
                 _last_error.clear();
                 _data_distances_ready = false;
             }
             else
+            {
+                if (hasWarning())
+                    MessageUtils::appendUniqueMessage(warnings, lastWarning());
                 _data_distances_ready = true;
+            }
         }
     }
 
-    if (!warnings.isEmpty())
-        _last_warning = warnings.join(" | ");
+    QStringList merged_warnings;
+    MessageUtils::appendUniqueMessage(merged_warnings, inherited_warning);
+    for (const QString& warning : warnings)
+        MessageUtils::appendUniqueMessage(merged_warnings, warning);
+    _last_warning = MessageUtils::joinMessages(merged_warnings);
 
     std::cout << "4-Finish Loading data" << std::endl;//testing
 
@@ -635,8 +668,7 @@ bool DatabaseManager::upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db
     upsert_q.prepare(R"SQL(
         INSERT INTO souvenirs(stadium_id, name, price)
         VALUES (?, ?, ?)
-        ON CONFLICT(stadium_id, name) DO UPDATE SET
-            price = excluded.price;
+        ON CONFLICT(stadium_id, name) DO NOTHING;
     )SQL");
 
     for (const int stadium_id : stadium_ids)
@@ -731,6 +763,18 @@ bool DatabaseManager::import_stadium_from_csv_files(const QString& stadium_csv)
             is_expansion
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(team_name) DO UPDATE SET
+            stadium_name = excluded.stadium_name,
+            seating_capacity = excluded.seating_capacity,
+            location = excluded.location,
+            playing_surface = excluded.playing_surface,
+            league = excluded.league,
+            date_opened = excluded.date_opened,
+            distance_to_center_field_ft = excluded.distance_to_center_field_ft,
+            distance_to_center_field_raw = excluded.distance_to_center_field_raw,
+            ballpark_typology = excluded.ballpark_typology,
+            roof_type = excluded.roof_type,
+            is_expansion = excluded.is_expansion
         ON CONFLICT(stadium_name) DO UPDATE SET
             team_name = excluded.team_name,
             seating_capacity = excluded.seating_capacity,
@@ -982,23 +1026,134 @@ bool DatabaseManager::import_distances_csv_file(const QString& distances_csv)
 
     QStringList warnings;
     if (skipped_empty_rows > 0)
-        warnings.push_back("distance csv skipped empty rows: " + QString::number(skipped_empty_rows));
+        MessageUtils::appendUniqueMessage(warnings, "distance csv skipped empty rows: " + QString::number(skipped_empty_rows));
     if (skipped_unknown_stadium_rows > 0)
-        warnings.push_back("distance csv skipped unknown stadium rows: " + QString::number(skipped_unknown_stadium_rows));
+        MessageUtils::appendUniqueMessage(warnings, "distance csv skipped unknown stadium rows: " + QString::number(skipped_unknown_stadium_rows));
     if (skipped_invalid_distance_rows > 0)
-        warnings.push_back("distance csv skipped invalid distance rows: " + QString::number(skipped_invalid_distance_rows));
+        MessageUtils::appendUniqueMessage(warnings, "distance csv skipped invalid distance rows: " + QString::number(skipped_invalid_distance_rows));
     if (skipped_self_loop_rows > 0)
-        warnings.push_back("distance csv skipped self-loop rows: " + QString::number(skipped_self_loop_rows));
+        MessageUtils::appendUniqueMessage(warnings, "distance csv skipped self-loop rows: " + QString::number(skipped_self_loop_rows));
 
-    if (!warnings.isEmpty())
-        _last_warning = warnings.join(" | ");
+    _last_warning = MessageUtils::joinMessages(warnings);
 
     return true;
 }
 
-bool DatabaseManager::is_table_schema_compatible()
+DatabaseManager::SchemaCheckResult DatabaseManager::check_table_schema_compatible()
 {
+    QSqlDatabase db = QSqlDatabase::database(_conn_name, false);
+    if (!db.isValid() || !db.isOpen())
+    {
+        _last_error = "schema compatibility check failed: database is not open.";
+        return SchemaCheckResult::CheckFailed;
+    }
 
+    auto table_exists = [&](const QString& table_name, bool& exists_out) -> SchemaCheckResult
+        {
+            QSqlQuery q(db);
+            q.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1;");
+            q.bindValue(0, table_name);
 
-    return true;
+            if (!q.exec())
+            {
+                _last_error =
+                    "schema compatibility check failed while checking table ["
+                    + table_name + "]: " + q.lastError().text();
+                return SchemaCheckResult::CheckFailed;
+            }
+
+            exists_out = q.next();
+            return SchemaCheckResult::Compatible;
+        };
+
+    auto table_contains_required_columns =
+        [&](const QString& table_name, const QSet<QString>& required_columns) -> SchemaCheckResult
+        {
+            QSqlQuery q(db);
+            if (!q.exec("PRAGMA table_info(" + table_name + ");"))
+            {
+                _last_error =
+                    "schema compatibility check failed while reading table info ["
+                    + table_name + "]: " + q.lastError().text();
+                return SchemaCheckResult::CheckFailed;
+            }
+
+            QSet<QString> existing_columns;
+            while (q.next())
+                existing_columns.insert(q.value(1).toString().trimmed().toLower());
+
+            if (existing_columns.isEmpty())
+            {
+                _last_error = "schema compatibility check failed: table [" + table_name + "] has no columns.";
+                return SchemaCheckResult::Incompatible;
+            }
+
+            for (const QString& required : required_columns)
+            {
+                if (!existing_columns.contains(required))
+                {
+                    _last_error =
+                        "schema mismatch on table [" + table_name + "], missing column ["
+                        + required + "]";
+                    return SchemaCheckResult::Incompatible;
+                }
+            }
+
+            return SchemaCheckResult::Compatible;
+        };
+
+    auto validate_table_if_exists =
+        [&](const QString& table_name, const QSet<QString>& required_columns) -> SchemaCheckResult
+        {
+            bool exists = false;
+            const SchemaCheckResult table_exists_result = table_exists(table_name, exists);
+            if (table_exists_result != SchemaCheckResult::Compatible)
+                return table_exists_result;
+
+            if (!exists)
+                return SchemaCheckResult::Compatible;
+
+            return table_contains_required_columns(table_name, required_columns);
+        };
+
+    const SchemaCheckResult stadiums_check_result = validate_table_if_exists("stadiums",
+        {
+            "stadium_id",
+            "team_name",
+            "stadium_name",
+            "seating_capacity",
+            "location",
+            "playing_surface",
+            "league",
+            "date_opened",
+            "distance_to_center_field_ft",
+            "distance_to_center_field_raw",
+            "ballpark_typology",
+            "roof_type",
+            "is_expansion"
+        });
+    if (stadiums_check_result != SchemaCheckResult::Compatible)
+        return stadiums_check_result;
+
+    const SchemaCheckResult souvenirs_check_result = validate_table_if_exists("souvenirs",
+        {
+            "souvenir_id",
+            "stadium_id",
+            "name",
+            "price"
+        });
+    if (souvenirs_check_result != SchemaCheckResult::Compatible)
+        return souvenirs_check_result;
+
+    const SchemaCheckResult distances_check_result = validate_table_if_exists("stadium_distances",
+        {
+            "stadium_a_id",
+            "stadium_b_id",
+            "distance_miles"
+        });
+    if (distances_check_result != SchemaCheckResult::Compatible)
+        return distances_check_result;
+
+    _last_error.clear();
+    return SchemaCheckResult::Compatible;
 }

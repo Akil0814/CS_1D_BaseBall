@@ -1,7 +1,7 @@
 #ifndef AUTH_SERVICE_H
 #define AUTH_SERVICE_H
 
-#include <QDir>
+#include <QString>
 #include <string>
 #include <cstdint>
 #include <fstream>
@@ -23,7 +23,7 @@ public:
 
 private:
 
-    QString try_get_key_path();
+    void setKeyPath(const QString& key_path);
     bool get_key_from_file(const std::string& filename, std::uint8_t& key_out);
     std::uint8_t obf_key(std::uint8_t k);
     void xor_inplace(std::string& s, unsigned char key);
@@ -44,6 +44,7 @@ private:
     static constexpr std::int32_t magic = 0x44533143u; // 'C''S''1''D' little-endian display
     static constexpr std::int8_t version = 1;
     static constexpr std::uint8_t key_mask = 0x5Au;
+    QString _key_path;
 };
 
 #endif // AUTH_SERVICE_H

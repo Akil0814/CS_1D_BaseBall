@@ -4,6 +4,7 @@
 #define APP Application::instance()
 
 #include <memory>
+#include <QString>
 
 #include "data_access/database_manager.h"
 #include "data_access/distancere_pository.h"
@@ -30,9 +31,14 @@ public:
     bool isSouvenirAvailable() const;
     bool isDistanceAvailable() const;
     bool isTripPlannerAvailable() const;
+    bool hasError() const;
+    bool hasWarning() const;
 
     const QString& lastError() const;
     const QString& lastWarning() const;
+
+private:
+    bool resolvePaths();
 
 private:
     Application();
@@ -45,6 +51,9 @@ private:
 private:
     QString _last_error = {};
     QString _last_warning = {};
+    QString _data_dir = {};
+    QString _db_path = {};
+    QString _key_path = {};
 
     bool souvenir_data_available = false;
     bool distance_data_available = false;

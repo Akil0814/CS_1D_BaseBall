@@ -2,6 +2,10 @@
 
 AuthService::AuthService() {}
 
+void AuthService::setKeyPath(const QString& key_path)
+{
+    _key_path = key_path;
+}
 
 std::uint8_t AuthService::obf_key(std::uint8_t k)
 {
@@ -56,35 +60,6 @@ bool AuthService::read_blob(std::ifstream& in, std::string& s, std::uint32_t len
     in.read(s.data(), static_cast<std::streamsize>(len));
     return static_cast<bool>(in);
 }
-
-QString AuthService::try_get_key_path()
-{
-    QDir dir(QDir::current());
-
-    QString data_dir_path;
-    for (int i = 0; i < 8; ++i)
-    {
-        const QString candidate2 = dir.filePath("App/data");
-        if (QDir(candidate2).exists())
-        {
-            data_dir_path = QDir(candidate2).absolutePath();
-            break;
-        }
-
-        const QString candidate = dir.filePath("data");
-        if (QDir(candidate).exists())
-        {
-            data_dir_path = QDir(candidate).absolutePath();
-            break;
-        }
-
-        if (!dir.cdUp())
-            break;
-    }
-
-    return data_dir_path;
-}
-
 
 bool AuthService::get_key_from_file(const std::string& filename, std::uint8_t& key_out)
 {
@@ -144,7 +119,13 @@ bool AuthService::idVerify(std::string i_user_name, std::string i_password)
     if (i_user_name.empty() || i_password.empty())
         return false;
 
-    std::string key_path = try_get_key_path().toStdString() + "/key.dat";
+    if (_key_path.trimmed().isEmpty())
+    {
+        std::cerr << "auth key path is not configured\n";
+        return false;
+    }
+
+    std::string key_path = _key_path.toStdString();
     std::cout << key_path << std::endl;
 
     std::uint8_t key = 0;

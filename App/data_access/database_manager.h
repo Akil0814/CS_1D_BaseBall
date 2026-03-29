@@ -46,9 +46,16 @@ public:
     bool hasWarning() const;
 
 private:
+    enum class SchemaCheckResult
+    {
+        Compatible,
+        Incompatible,
+        CheckFailed
+    };
 
     bool init_impl(bool allow_auto_recover);
-    bool is_table_schema_compatible();
+    SchemaCheckResult check_table_schema_compatible();
+    void setDatabasePath(const QString& db_path);
 
     bool open_db();
     bool init_pragmas();
