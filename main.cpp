@@ -6,12 +6,11 @@
 
 void test();
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
+
     QApplication a(argc, argv);
     MainWindow w;
-    if (APP->init())
-    {
+    if (!APP->init()){
         std::cerr<< "init failed:" << APP->lastError() << std::endl;
         throw std::runtime_error("init failed:");
     }
@@ -21,7 +20,7 @@ int main(int argc, char *argv[])
     return a.exec();
 }
 
-void test()
-{
+void test(){
+
     std::cout << "testing" << std::endl;
 }

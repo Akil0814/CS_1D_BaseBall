@@ -1,0 +1,3 @@
+Distance csv references unknown stadium: Marlins Park -> Minute Maid Park
+Fix: Minute Maid Park change to Daikin Park
+Distance between new team title doesn't match

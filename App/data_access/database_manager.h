@@ -1,27 +1,8 @@
 #ifndef DATABASE_MANAGER_H
 #define DATABASE_MANAGER_H
 
-#include<iostream>
-#include <algorithm>
-#include <functional>
-
-#include <QCoreApplication>
 #include <QSqlDatabase>
-#include <QStandardPaths>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QVector>
-#include <optional>
 #include <QString>
-#include <QVariant>
-#include <QVariantList>
-#include <QVariantMap>
-#include <QDir>
-#include <QSet>
-#include <QHash>
-#include <QFile>
-#include <QFileInfo>
-#include <QTextStream>
 
 class Application;
 

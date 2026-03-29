@@ -1,6 +1,19 @@
 #include "database_manager.h"
+
+#include <algorithm>
+#include <iostream>
+
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QHash>
 #include <QRegularExpression>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QStringList>
+#include <QTextStream>
+#include <QVector>
 
 namespace
 {
@@ -8,6 +21,21 @@ struct CsvTable
 {
     QStringList header;
     QVector<QStringList> rows;
+};
+
+struct DefaultSouvenir
+{
+    const char* name;
+    double price;
+};
+
+const QVector<DefaultSouvenir> k_default_souvenirs =
+{
+    { "Baseball cap", 19.99 },
+    { "Baseball bat", 89.39 },
+    { "Team pennant", 17.99 },
+    { "Autographed baseball", 29.99 },
+    { "Team jersey", 199.99 }
 };
 
 QString normalize_key(const QString& input)
@@ -200,6 +228,63 @@ double parse_first_number(const QString& text, double default_value = 0.0)
     const double value = match.captured(0).toDouble(&ok);
     return ok ? value : default_value;
 }
+
+bool upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db, QString& out_error)
+{
+    QSqlQuery stadium_q(db);
+    if (!stadium_q.exec("SELECT stadium_id FROM stadiums;"))
+    {
+        out_error = stadium_q.lastError().text() + " | SQL: SELECT stadium_id FROM stadiums";
+        return false;
+    }
+
+    QVector<int> stadium_ids;
+    while (stadium_q.next())
+        stadium_ids.push_back(stadium_q.value(0).toInt());
+
+    if (stadium_ids.isEmpty())
+        return true;
+
+    if (!db.transaction())
+    {
+        out_error = db.lastError().text();
+        return false;
+    }
+
+    QSqlQuery upsert_q(db);
+    upsert_q.prepare(R"SQL(
+        INSERT INTO souvenirs(stadium_id, name, price)
+        VALUES (?, ?, ?)
+        ON CONFLICT(stadium_id, name) DO UPDATE SET
+            price = excluded.price;
+    )SQL");
+
+    for (const int stadium_id : stadium_ids)
+    {
+        for (const DefaultSouvenir& item : k_default_souvenirs)
+        {
+            upsert_q.bindValue(0, stadium_id);
+            upsert_q.bindValue(1, QString::fromUtf8(item.name));
+            upsert_q.bindValue(2, item.price);
+            if (!upsert_q.exec())
+            {
+                out_error = upsert_q.lastError().text();
+                db.rollback();
+                return false;
+            }
+        }
+    }
+
+    if (!db.commit())
+    {
+        out_error = db.lastError().text();
+        db.rollback();
+        return false;
+    }
+
+    return true;
+}
+
 }
 
 DatabaseManager::DatabaseManager(){}
@@ -229,6 +314,58 @@ bool DatabaseManager::init()
 
 bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
 {
+    _last_error.clear();
+
+    _initialize = false;
+
+    if (QSqlDatabase::contains(_conn_name))
+    {
+        {
+            QSqlDatabase db = QSqlDatabase::database(_conn_name, false);
+            if (db.isValid() && db.isOpen())
+                db.close();
+        }
+        QSqlDatabase::removeDatabase(_conn_name);
+
+    }
+
+    QString time = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss_zzz");
+
+    if (QFile::exists(_db_path))
+    {
+        QString backup = _db_path + time + ".bak";
+        if (!QFile::rename(_db_path, backup))
+        {
+            _last_error = "failed to backup db file";
+            _initialize = false;
+            if (init())
+                _last_error += ", but database is still usable";
+            else
+                _last_error += ", and database is not usable";
+
+            return false;
+        }
+    }
+
+
+    if (!init())
+    {
+        QFile::remove(_db_path);
+        QFile::rename(_db_path + time + ".bak", _db_path);
+
+        _initialize = false;
+        _last_error = "failed to initialize new database";
+        if (init())
+            _last_error += ", but restored backup successfully";
+        else
+            _last_error += ", and failed to restore backup";
+
+        return false;
+    }
+
+    if (remove_backup_if_success)
+        QFile::remove(_db_path + time + ".bak");
+
     return true;
 }
 
@@ -296,6 +433,7 @@ bool DatabaseManager::open_db()
         ? QSqlDatabase::database(_conn_name)
         : QSqlDatabase::addDatabase("QSQLITE", _conn_name);
 
+    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000");
     db.setDatabaseName(_db_path);
 
     if (!db.open())
@@ -352,8 +490,6 @@ bool DatabaseManager::init_pragmas()
 
     if (!exec_sql("PRAGMA temp_store = MEMORY;"))
         return false;
-
-    db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000");
 
     std::cout << "2-Finish Configuring runtime parameters" << std::endl;
 
@@ -445,19 +581,20 @@ bool DatabaseManager::init_schema()
     // Step 2: souvenirs
     if (!run_step_transaction("create_souvenirs",
         {
-            R"SQL(
-                CREATE TABLE IF NOT EXISTS souvenirs
-                (
-                    souvenir_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    stadium_id INTEGER NOT NULL,
-                    name TEXT NOT NULL COLLATE NOCASE,
-                    price REAL NOT NULL DEFAULT 0 CHECK (price >= 0),
-                    UNIQUE(stadium_id, name),
-                    FOREIGN KEY(stadium_id) REFERENCES stadiums(stadium_id)
-                        ON UPDATE CASCADE
-                        ON DELETE CASCADE
-                );
-            )SQL"
+        R"SQL(
+            CREATE TABLE IF NOT EXISTS souvenirs
+            (
+                souvenir_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                stadium_id INTEGER NOT NULL,
+                name TEXT NOT NULL COLLATE NOCASE,
+                price REAL NOT NULL DEFAULT 0 CHECK (price >= 0),
+                UNIQUE(stadium_id, name),
+                FOREIGN KEY(stadium_id) REFERENCES stadiums(stadium_id)
+                    ON UPDATE CASCADE
+                    ON DELETE CASCADE
+            );
+        )SQL",
+        "CREATE INDEX IF NOT EXISTS idx_souvenirs_stadium_id ON souvenirs(stadium_id);"
         }))
     {
         return false;
@@ -528,10 +665,6 @@ bool DatabaseManager::seed_if_empty()
     if (distance_count < 0)
         return false;
 
-    if (stadium_count > 0 && distance_count > 0)
-        return true;
-
-    // Default seeding only reads the 2 csv files under data directory.
     const QString data_dir = QFileInfo(_db_path).absolutePath();
     const QString stadium_csv = QDir(data_dir).filePath("MLB Information.csv");
     const QString distances_csv = QDir(data_dir).filePath("Distance between stadiums.csv");
@@ -541,6 +674,9 @@ bool DatabaseManager::seed_if_empty()
         if (!import_stadium_from_csv_files(stadium_csv))
             return false;
     }
+
+    if (!upsert_default_souvenirs_for_all_stadiums(db, _last_error))
+        return false;
 
     if (distance_count == 0)
     {
@@ -788,5 +924,3 @@ bool DatabaseManager::import_distances_csv_file(const QString& distances_csv)
 
     return true;
 }
-
-
