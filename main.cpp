@@ -26,6 +26,7 @@ int main(int argc, char *argv[]){
 
 void test(){
 
+    // Quick auth check for debug/demo account.
     if (APP->isAuthAvailable()){
 
         APP->authService()->idVerify("cs1d", "abc");
@@ -34,9 +35,9 @@ void test(){
         //auth->idVerify("cs1d", "abc");
     }
 
+    // Fetch one stadium by id and print a few key fields
     auto tmp=APP->stadiumRepository()->getStadiumByID(3);
     //auto tmp = APP->stadiumRepository()->getStadiumByID(999);
-
     if (tmp.has_value())
     {
         const auto& stadium_t = tmp.value();
@@ -48,4 +49,21 @@ void test(){
     }
     else
         std::cout << "No stadium found\n";
+
+    // Fetch all stadiums with sorting/filter and print a simple list
+    auto stadiums = APP->stadiumRepository()->getAllStadiums(
+        StadiumRepository::StadiumSortBy::DateOpened,
+        StadiumRepository::LeagueFilter::All
+    );
+
+    std::cout << "\ngetAllStadiums result count: " << stadiums.size() << '\n';
+
+    for (const auto& stadium : stadiums)
+    {
+        std::cout << "--------------------\n";
+        std::cout << "stadium_id: " << stadium.stadium_id << '\n';
+        std::cout << "team_name: " << stadium.team_name.toStdString() << '\n';
+        std::cout << "stadium_name: " << stadium.stadium_name.toStdString() << '\n';
+        std::cout << "location: " << stadium.location.toStdString() << '\n';
+    }
 }

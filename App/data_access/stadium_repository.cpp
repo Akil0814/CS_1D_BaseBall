@@ -10,6 +10,78 @@ std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, Le
 {
 	std::vector<Stadium> tmp;
 
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return tmp;
+
+    QString sql = R"(
+        SELECT
+            stadium_id,
+            team_name,
+            stadium_name,
+            seating_capacity,
+            location,
+            playing_surface,
+            league,
+            date_opened,
+            distance_to_center_field_ft,
+            distance_to_center_field_raw,
+            ballpark_typology,
+            roof_type,
+            is_expansion
+        FROM stadiums
+    )";
+
+    QString sort;
+    switch (sort_by)
+    {
+    case StadiumSortBy::TeamName:
+        sort = "team_name ASC, stadium_name ASC";
+        break;
+    case StadiumSortBy::StadiumName:
+        sort = "stadium_name ASC, team_name ASC";
+        break;
+    case StadiumSortBy::DateOpened:
+        sort = "date_opened ASC, stadium_name ASC";
+        break;
+    case StadiumSortBy::SeatingCapacity:
+        sort = "seating_capacity ASC, stadium_name ASC";
+        break;
+    case StadiumSortBy::Typology:
+        sort = "ballpark_typology ASC, stadium_name ASC";
+        break;
+    default:
+        return tmp;
+    }
+    
+    switch (league)
+    {
+    case LeagueFilter::All:
+        break;
+    case LeagueFilter::American:
+        sql += " WHERE league = 'American' ";
+        break;
+    case LeagueFilter::National:
+        sql += " WHERE league = 'National' ";
+        break;
+    default:
+        return tmp;
+    }
+  
+    sql += " ORDER BY " + sort;
+
+    QSqlQuery q(db);
+    if (!q.prepare(sql))
+        return tmp;
+
+    if (!q.exec())
+        return tmp;
+
+    while (q.next())
+    {
+        tmp.push_back(buildStadiumFromQuery(q));
+    }
+
 	return tmp;
 }
 
