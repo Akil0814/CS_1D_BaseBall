@@ -19,6 +19,15 @@ set(PROJECT_SOURCES
         main_window.cpp
         main_window.h
         main_window.ui
+        AdminPage/adminpage.cpp
+        AdminPage/adminpage.h
+        AdminPage/adminpage.ui
+        AdminPage/loginpage.cpp
+        AdminPage/loginpage.h
+        AdminPage/loginpage.ui
+        AdminPage/dashboardpage.cpp
+        AdminPage/dashboardpage.h
+        AdminPage/dashboardpage.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -51,6 +60,10 @@ target_link_libraries(CS_1D_BaseBall PRIVATE
     Qt6::Sql
     Qt6::Core
     app
+)
+target_include_directories(CS_1D_BaseBall PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
