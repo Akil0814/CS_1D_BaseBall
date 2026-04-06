@@ -13,6 +13,10 @@
 LoginPage::LoginPage(QWidget *parent) :
     QWidget(parent), ui(new Ui::LoginPage) {
     ui->setupUi(this);
+
+    // ability to press enter/return to input the login request
+    connect(ui->passwordField, &QLineEdit::returnPressed, this, &LoginPage::on_buttonBox_accepted);
+    connect(ui->usernameField, &QLineEdit::returnPressed, this, &LoginPage::on_buttonBox_accepted);
 }
 
 LoginPage::~LoginPage() {
@@ -33,9 +37,6 @@ void LoginPage::on_buttonBox_accepted() {
         emit loginAccepted();
     } else {
         QMessageBox::warning(this, "Login Failed", "Incorrect username or password.");
-        // QMessageBox::StandardButton reply;
-        // reply = QMessageBox::warning(this, "Invalid", "Incorrect username or password",
-                                        // QMessageBox::Ok);
     }
 }
 
