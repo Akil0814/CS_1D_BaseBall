@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [ "master" ]
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # Runs at midnight UTC
+  workflow_dispatch:      # Allows you to click "Run workflow" manually
 
 jobs:
   build:
@@ -16,9 +16,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # ADDED macos-latest here
         os: [ubuntu-latest, windows-latest, macos-latest]
         build_type: [Release]
+        # We use 'include' to map the correct compilers to each OS directly
         include:
           - os: windows-latest
             c_compiler: cl
@@ -29,13 +29,6 @@ jobs:
           - os: macos-latest
             c_compiler: clang
             cpp_compiler: clang++
-        exclude:
-          - os: windows-latest
-            c_compiler: gcc
-          - os: ubuntu-latest
-            c_compiler: cl
-          - os: macos-latest
-            c_compiler: cl
 
     steps:
     - uses: actions/checkout@v4
@@ -44,6 +37,7 @@ jobs:
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.5.*'
+        # Includes SQL for your Baseball database and Charts/Declarative for the UI
         modules: 'qtcharts qtdeclarative qtsql'
 
     - name: Set reusable strings
@@ -81,6 +75,7 @@ jobs:
   create_release:
     needs: build
     runs-on: ubuntu-latest
+    # Only creates the formal "Release" for scheduled nightly runs or manual triggers
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     permissions:
       contents: write
