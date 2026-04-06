@@ -1,0 +1,92 @@
+name: Nightly Build and Release
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs at 00:00 UTC daily
+  workflow_dispatch:      # The "Manual Trigger" button
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+        include:
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+            artifact_name: win-exe
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+            artifact_name: mac-app
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches history so we can pull PR/Commit titles
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.5.*'
+          modules: 'qtcharts'
+          setup-python: 'false'
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          cmake -B build \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_TESTING=ON \
+          -S .
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            build/**/CS_1D_BaseBall.exe
+            build/**/CS_1D_BaseBall.app
+          if-no-files-found: error
+
+  create_release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          echo "## Nightly Build Summary" > body.md
+          echo "Built from the latest commits in master:" >> body.md
+          # This lists the titles of the last 5 commits (usually includes the PR merges)
+          git log -5 --pretty=format:"* %s" >> body.md 
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly-${{ github.run_id }}
+          name: Nightly Build ${{ github.run_number }}
+          body_path: body.md
+          draft: false
+          prerelease: true
+          files: |
+            **/*.exe
+            **/*.app/*
