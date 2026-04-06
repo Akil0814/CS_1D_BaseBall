@@ -1,51 +1,51 @@
-name: Nightly Build and Release (Windows Only)
+# name: Nightly Build and Release (Windows Only)
 
-on:
-  schedule:
-    - cron: '0 0 * * *'  # Runs at 00:00 UTC daily
-  workflow_dispatch:      # The "Manual Trigger" button
+# on:
+#   schedule:
+#     - cron: '0 0 * * *'  # Runs at 00:00 UTC daily
+#   workflow_dispatch:      # The "Manual Trigger" button
 
-jobs:
-  build_and_release:
-    runs-on: windows-latest
-    permissions:
-      contents: write
+# jobs:
+#   build_and_release:
+#     runs-on: windows-latest
+#     permissions:
+#       contents: write
     
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.11'
 
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.5.*'
-          modules: 'qtcharts'
-          setup-python: 'false'
+#       - name: Install Qt
+#         uses: jurplel/install-qt-action@v3
+#         with:
+#           version: '6.5.*'
+#           modules: 'qtcharts'
+#           setup-python: 'false'
 
-      - name: Configure CMake
-        run: |
-          cmake -B build `
-          -DCMAKE_CXX_COMPILER=cl `
-          -DCMAKE_C_COMPILER=cl `
-          -DCMAKE_BUILD_TYPE=Release `
-          -DBUILD_TESTING=ON `
-          -S .
+#       - name: Configure CMake
+#         run: |
+#           cmake -B build `
+#           -DCMAKE_CXX_COMPILER=cl `
+#           -DCMAKE_C_COMPILER=cl `
+#           -DCMAKE_BUILD_TYPE=Release `
+#           -DBUILD_TESTING=ON `
+#           -S .
 
-      - name: Build
-        run: cmake --build build --config Release
+#       - name: Build
+#         run: cmake --build build --config Release
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: nightly-${{ github.run_id }}
-          name: Nightly Build ${{ github.run_number }}
-          body: "Automated nightly Windows build."
-          draft: false
-          prerelease: true
-          files: |
-            build/**/CS_1D_BaseBall.exe
+#       - name: Create GitHub Release
+#         uses: softprops/action-gh-release@v2
+#         with:
+#           tag_name: nightly-${{ github.run_id }}
+#           name: Nightly Build ${{ github.run_number }}
+#           body: "Automated nightly Windows build."
+#           draft: false
+#           prerelease: true
+#           files: |
+#             build/**/CS_1D_BaseBall.exe
