@@ -35,7 +35,7 @@ private:
     bool read_u8(std::ifstream& in, std::uint8_t& v);
     bool read_blob(std::ifstream& in, std::string& s, std::uint32_t len);
 
-private:
+public:
     AuthService();
     AuthService(const AuthService& copy) = delete;
     AuthService& operator=(const AuthService& copy) = delete;

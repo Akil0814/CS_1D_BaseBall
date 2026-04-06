@@ -6,6 +6,8 @@
 
 #include "loginpage.h"
 #include "ui_LoginPage.h"
+#include "App/services/auth_service.h"
+#include <QMessageBox>
 
 
 LoginPage::LoginPage(QWidget *parent) :
@@ -19,10 +21,21 @@ LoginPage::~LoginPage() {
 
 // TODO: implement proper admin password checking
 void LoginPage::on_buttonBox_accepted() {
-    bool isAuthenticated = true;
+    QString username = ui->usernameField->text();
+    QString password = ui->passwordField->text();
 
-    if (isAuthenticated) {
+    AuthService auth;
+
+    // TODO: remove debug login
+    if (username == "debug" && password == "debug") {
         emit loginAccepted();
+    } else if (auth.idVerify(username.toStdString(), password.toStdString())) {
+        emit loginAccepted();
+    } else {
+        QMessageBox::warning(this, "Login Failed", "Incorrect username or password.");
+        // QMessageBox::StandardButton reply;
+        // reply = QMessageBox::warning(this, "Invalid", "Incorrect username or password",
+                                        // QMessageBox::Ok);
     }
 }
 
