@@ -22,15 +22,15 @@ int main(int argc, char *argv[]){
          
     MainWindow w;
 
-    AdminPage admin_page;
-    admin_page.show();
+    // AdminPage admin_page;
+    // admin_page.show();
     // LoginPage login_page;
     // login_page.show();
     // DashboardPage dashboard_page;
     // dashboard_page.show();
 
     test();
-    // w.show();
+    w.show();
     return a.exec();
 }
 
