@@ -33,12 +33,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # 1. SETUP PYTHON (Fixes the Exit Code 1 error)
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    # 2. INSTALL QT (Now uses the Python we just set up)
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.5.*'
-        # Includes SQL for your Baseball database and Charts/Declarative for the UI
         modules: 'qtcharts qtdeclarative qtsql'
+        setup-python: 'false' # Tells the action NOT to try installing its own Python
 
     - name: Set reusable strings
       id: strings
