@@ -44,7 +44,7 @@ jobs:
       uses: jurplel/install-qt-action@v3
       with:
         version: '6.5.*'
-        modules: 'qtcharts qtdeclarative qtsql'
+        modules: 'qtcharts'
         setup-python: 'false' 
 
     - name: Set reusable strings
