@@ -25,6 +25,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        browse_window.h browse_window.cpp browse_window.ui
+        detail_window.h detail_window.cpp detail_window.ui
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET CS_1D_BaseBall APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
