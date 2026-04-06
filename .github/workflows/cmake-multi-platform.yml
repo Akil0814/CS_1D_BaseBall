@@ -1,105 +1,105 @@
-name: Multi-Platform Nightly Build and Test
+# name: Multi-Platform Nightly Build and Test
 
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-  schedule:
-    - cron: '0 0 * * *'  # Midnight UTC
-  workflow_dispatch:      # Manual trigger button
+# on:
+#   push:
+#     branches: [ "master" ]
+#   pull_request:
+#     branches: [ "master" ]
+#   schedule:
+#     - cron: '0 0 * * *'  # Midnight UTC
+#   workflow_dispatch:      # Manual trigger button
 
-jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+# jobs:
+#   build:
+#     runs-on: ${{ matrix.os }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        build_type: [Release]
-        include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ubuntu-latest, windows-latest, macos-latest]
+#         build_type: [Release]
+#         include:
+#           - os: windows-latest
+#             c_compiler: cl
+#             cpp_compiler: cl
+#           - os: ubuntu-latest
+#             c_compiler: gcc
+#             cpp_compiler: g++
+#           - os: macos-latest
+#             c_compiler: clang
+#             cpp_compiler: clang++
 
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+#     steps:
+#     - name: Checkout Code
+#       uses: actions/checkout@v4
 
-    # 1. Setup Python (Fixes the PEP 668 / Exit Code 1 error)
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+#     # 1. Setup Python (Fixes the PEP 668 / Exit Code 1 error)
+#     - name: Set up Python
+#       uses: actions/setup-python@v5
+#       with:
+#         python-version: '3.11'
 
-    # 2. Install Qt (Configured to use the Python environment above)
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '6.5.*'
-        modules: 'qtcharts'
-        setup-python: 'false' 
+#     # 2. Install Qt (Configured to use the Python environment above)
+#     - name: Install Qt
+#       uses: jurplel/install-qt-action@v3
+#       with:
+#         version: '6.5.*'
+#         modules: 'qtcharts'
+#         setup-python: 'false' 
 
-    - name: Set reusable strings
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+#     - name: Set reusable strings
+#       id: strings
+#       shell: bash
+#       run: |
+#         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - name: Configure CMake
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DBUILD_TESTING=ON
-        -S ${{ github.workspace }}
+#     - name: Configure CMake
+#       run: >
+#         cmake -B ${{ steps.strings.outputs.build-output-dir }}
+#         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+#         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+#         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+#         -DBUILD_TESTING=ON
+#         -S ${{ github.workspace }}
 
-    - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+#     - name: Build
+#       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Test
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --build-config ${{ matrix.build_type }} --output-on-failure
+#     - name: Test
+#       working-directory: ${{ steps.strings.outputs.build-output-dir }}
+#       run: ctest --build-config ${{ matrix.build_type }} --output-on-failure
 
-    # 3. Upload Artifacts (Saves the files from each OS)
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: baseball-app-${{ matrix.os }}
-        path: |
-          ${{ steps.strings.outputs.build-output-dir }}/**/CS_1D_BaseBall.exe
-          ${{ steps.strings.outputs.build-output-dir }}/**/CS_1D_BaseBall
-          ${{ steps.strings.outputs.build-output-dir }}/**/CS_1D_BaseBall.app
-        if-no-files-found: warn
+#     # 3. Upload Artifacts (Saves the files from each OS)
+#     - name: Upload Artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: baseball-app-${{ matrix.os }}
+#         path: |
+#           ${{ steps.strings.outputs.build-output-dir }}/**/CS_1D_BaseBall.exe
+#           ${{ steps.strings.outputs.build-output-dir }}/**/CS_1D_BaseBall
+#           ${{ steps.strings.outputs.build-output-dir }}/**/CS_1D_BaseBall.app
+#         if-no-files-found: warn
 
-  create_release:
-    needs: build
-    runs-on: ubuntu-latest
-    # Only creates the formal release on manual runs or the nightly schedule
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    permissions:
-      contents: write
-    steps:
-      - name: Download All Artifacts
-        uses: actions/download-artifact@v4
+#   create_release:
+#     needs: build
+#     runs-on: ubuntu-latest
+#     # Only creates the formal release on manual runs or the nightly schedule
+#     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+#     permissions:
+#       contents: write
+#     steps:
+#       - name: Download All Artifacts
+#         uses: actions/download-artifact@v4
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: nightly-${{ github.run_id }}
-          name: Nightly Build ${{ github.run_number }}
-          body: "Automated multi-platform build for Baseball Project. Includes Windows (.exe), Linux, and macOS (.app) binaries."
-          draft: false
-          prerelease: true
-          files: |
-            **/CS_1D_BaseBall.exe
-            **/CS_1D_BaseBall
-            **/CS_1D_BaseBall.app/*
+#       - name: Create GitHub Release
+#         uses: softprops/action-gh-release@v2
+#         with:
+#           tag_name: nightly-${{ github.run_id }}
+#           name: Nightly Build ${{ github.run_number }}
+#           body: "Automated multi-platform build for Baseball Project. Includes Windows (.exe), Linux, and macOS (.app) binaries."
+#           draft: false
+#           prerelease: true
+#           files: |
+#             **/CS_1D_BaseBall.exe
+#             **/CS_1D_BaseBall
+#             **/CS_1D_BaseBall.app/*
