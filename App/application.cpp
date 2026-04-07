@@ -235,3 +235,7 @@ bool Application::isTripPlannerAvailable() const
 {
     return distance_data_available && _trip_planner != nullptr;
 }
+
+DatabaseManager* Application::databaseManager() {
+    return _db_manager.get();
+}

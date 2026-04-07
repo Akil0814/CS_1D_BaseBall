@@ -5,6 +5,7 @@
 #ifndef GITIGNORE_DASHBOARDPAGE_H
 #define GITIGNORE_DASHBOARDPAGE_H
 
+#include <QSqlTableModel>
 #include <QWidget>
 
 
@@ -19,8 +20,17 @@ public:
     explicit DashboardPage(QWidget *parent = nullptr);
     ~DashboardPage() override;
 
+    void linkStadiumDB();
+
+    void setupStadiumModel();
+
+void setupStadiumNameField();
+
+void linkStadiumNameField(QSqlTableModel* stadiumModel);
+
 private:
     Ui::DashboardPage *ui;
+    QSqlTableModel* stadiumModel;
 };
 
 
