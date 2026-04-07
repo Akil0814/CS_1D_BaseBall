@@ -18,6 +18,7 @@ DashboardPage::DashboardPage(QWidget *parent) :
     ui->setupUi(this);
 
     linkStadiumDB();
+    linkSouvenirDB();
 }
 
 DashboardPage::~DashboardPage() {
@@ -32,9 +33,6 @@ void DashboardPage::linkStadiumDB() {
 
     setupStadiumNameField();
 }
-
-
-
 void DashboardPage::setupStadiumModel() {
     QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
 
@@ -53,7 +51,7 @@ void DashboardPage::setupStadiumModel() {
     stadiumModel->setEditStrategy(QSqlTableModel::OnFieldChange);
 }
 void DashboardPage::setupStadiumNameField() {
-    // 2. Handle the "Click" on the Campus List
+    // sync the lineedit when clicking on an index
     connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
         // Get the full record for the row you just clicked
         QSqlRecord record = stadiumModel->record(index.row());
@@ -61,14 +59,9 @@ void DashboardPage::setupStadiumNameField() {
         // Update the LineEdit with the name
         QString name = record.value("stadium_name").toString(); // Use your actual column name
         ui->stadiumNameLineEdit->setText(name);
-
-        // Filter the Souvenirs table by Campus ID
-        // int campusId = record.value("campusId").toInt(); // Use your actual ID column name
-        // souvenirModel->setFilter(QString("campusId = %1").arg(campusId));
-        // souvenirModel->select();
     });
 
-    // 3. Handle live-editing the name back to the DB
+    // Handle live-editing the name back to the DB
     connect(ui->stadiumNameLineEdit, &QLineEdit::textEdited, this, [this](const QString &newText) {
         QModelIndex currentIndex = ui->stadiumList->currentIndex();
         if (currentIndex.isValid()) {
@@ -96,4 +89,62 @@ void DashboardPage::setupStadiumNameField() {
         }
         qDebug() << "Update successful:" << stadiumModel->lastError().text();
     });
+}
+
+void DashboardPage::linkSouvenirDB() {
+    setupSouvenirModel();
+
+    ui->souvenirTableView->setModel(souvenirModel);
+
+    setupSouvenirTableFormatting();
+
+    // behavior for displaying souvenirs of the selected stadium
+    setupSouvenirFiltering();
+}
+void DashboardPage::setupSouvenirModel() {
+    QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
+
+    // create model
+    souvenirModel = new QSqlTableModel(this, db);
+    souvenirModel->setTable("souvenirs");
+    souvenirModel->setFilter("stadium_id = -1");
+
+    if (!souvenirModel->select()) {
+        qDebug() << "Model Error:" << souvenirModel->lastError().text();
+    }
+
+    if (!APP->databaseManager()->isStadiumModuleAvailable()) {
+        qDebug() << "Data is not loaded yet!";
+    }
+
+    souvenirModel->setEditStrategy(QSqlTableModel::OnFieldChange);
+}
+void DashboardPage::setupSouvenirFiltering() {
+    connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
+        // 1. Get the record from the STADIUM model
+        QSqlRecord record = stadiumModel->record(index.row());
+
+        // 2. Get the ID (Make sure this matches "stadium_id" in database_manager.cpp)
+        int stadiumId = record.value("stadium_id").toInt();
+
+        // 3. Apply the filter to the SOUVENIR model
+        // This tells SQL: "SELECT * FROM souvenirs WHERE stadium_id = X"
+        souvenirModel->setFilter(QString("stadium_id = %1").arg(stadiumId));
+
+        // 4. Refresh the data
+        souvenirModel->select();
+    });
+}
+void DashboardPage::setupSouvenirTableFormatting() {
+    // hide the souvenir and stadium id
+    ui->souvenirTableView->setColumnHidden(0, true);
+    ui->souvenirTableView->setColumnHidden(1, true);
+
+    // rename headers for each column
+    souvenirModel->setHeaderData(2, Qt::Horizontal, "Souvenir Name");
+    souvenirModel->setHeaderData(3, Qt::Horizontal, "Price ($)");
+
+    QHeaderView *header = ui->souvenirTableView->horizontalHeader();
+    header->setSectionResizeMode(2, QHeaderView::Stretch);
+    header->setSectionResizeMode(3, QHeaderView::ResizeToContents);
 }

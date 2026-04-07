@@ -26,11 +26,20 @@ public:
 
 void setupStadiumNameField();
 
+void linkSouvenirDB();
+
+void setupSouvenirModel();
+
+void setupSouvenirFiltering();
+
+void setupSouvenirTableFormatting();
+
 void linkStadiumNameField(QSqlTableModel* stadiumModel);
 
 private:
     Ui::DashboardPage *ui;
     QSqlTableModel* stadiumModel;
+    QSqlTableModel* souvenirModel;
 };
 
 
