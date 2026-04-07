@@ -52,6 +52,9 @@ public:
     // Return the last recorded warning message.
     const QString& lastWarning() const;
 
+    // Erfan Testing
+    DatabaseManager* databaseManager();
+
 private:
     bool resolvePaths();
     void setUnavailableModuleError(const QString& module_name);
