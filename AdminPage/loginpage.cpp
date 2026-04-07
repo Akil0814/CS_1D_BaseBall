@@ -9,6 +9,8 @@
 #include "App/services/auth_service.h"
 #include <QMessageBox>
 
+#include "App/application.h"
+
 
 LoginPage::LoginPage(QWidget *parent) :
     QWidget(parent), ui(new Ui::LoginPage) {
@@ -28,15 +30,17 @@ void LoginPage::on_buttonBox_accepted() {
     QString username = ui->usernameField->text();
     QString password = ui->passwordField->text();
 
-    AuthService auth;
-
     // TODO: remove debug login
-    if (username == "debug" && password == "debug") {
-        emit loginAccepted();
-    } else if (auth.idVerify(username.toStdString(), password.toStdString())) {
-        emit loginAccepted();
+    if (APP->isAuthAvailable()) {
+        if (username == "debug" && password == "debug") {
+            emit loginAccepted();
+        } else if (APP->authService()->idVerify(username.toStdString(), password.toStdString())) {
+            emit loginAccepted();
+        } else {
+            QMessageBox::warning(this, "Login Failed", "Incorrect username or password.");
+        }
     } else {
-        QMessageBox::warning(this, "Login Failed", "Incorrect username or password.");
+        qDebug() << "auth is not available";
     }
 }
 
