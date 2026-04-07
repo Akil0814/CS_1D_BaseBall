@@ -17,25 +17,25 @@ DashboardPage::DashboardPage(QWidget *parent) :
     QWidget(parent), ui(new Ui::DashboardPage) {
     ui->setupUi(this);
 
-    linkStadiumDB();
-    linkSouvenirDB();
+    const QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
+
+    linkStadiumDB(db);
+    linkSouvenirDB(db);
 }
 
 DashboardPage::~DashboardPage() {
     delete ui;
 }
 
-void DashboardPage::linkStadiumDB() {
-    setupStadiumModel();
+void DashboardPage::linkStadiumDB(const QSqlDatabase &db) {
+    setupStadiumModel(db);
 
     ui->stadiumList->setModel(stadiumModel);
     ui->stadiumList->setModelColumn(2);
 
     setupStadiumNameField();
 }
-void DashboardPage::setupStadiumModel() {
-    QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
-
+void DashboardPage::setupStadiumModel(const QSqlDatabase &db) {
     // create model
     stadiumModel = new QSqlTableModel(this, db);
     stadiumModel->setTable("stadiums");
@@ -91,8 +91,8 @@ void DashboardPage::setupStadiumNameField() {
     });
 }
 
-void DashboardPage::linkSouvenirDB() {
-    setupSouvenirModel();
+void DashboardPage::linkSouvenirDB(const QSqlDatabase &db) {
+    setupSouvenirModel(db);
 
     ui->souvenirTableView->setModel(souvenirModel);
 
@@ -101,9 +101,7 @@ void DashboardPage::linkSouvenirDB() {
     // behavior for displaying souvenirs of the selected stadium
     setupSouvenirFiltering();
 }
-void DashboardPage::setupSouvenirModel() {
-    QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
-
+void DashboardPage::setupSouvenirModel(const QSqlDatabase &db) {
     // create model
     souvenirModel = new QSqlTableModel(this, db);
     souvenirModel->setTable("souvenirs");

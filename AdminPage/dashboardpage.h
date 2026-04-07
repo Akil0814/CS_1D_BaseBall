@@ -20,26 +20,19 @@ public:
     explicit DashboardPage(QWidget *parent = nullptr);
     ~DashboardPage() override;
 
-    void linkStadiumDB();
+    void linkStadiumDB(const QSqlDatabase &db);
+    void setupStadiumModel(const QSqlDatabase &db);
+    void setupStadiumNameField();
 
-    void setupStadiumModel();
-
-void setupStadiumNameField();
-
-void linkSouvenirDB();
-
-void setupSouvenirModel();
-
-void setupSouvenirFiltering();
-
-void setupSouvenirTableFormatting();
-
-void linkStadiumNameField(QSqlTableModel* stadiumModel);
+    void linkSouvenirDB(const QSqlDatabase &db);
+    void setupSouvenirModel(const QSqlDatabase &db);
+    void setupSouvenirFiltering();
+    void setupSouvenirTableFormatting();
 
 private:
     Ui::DashboardPage *ui;
-    QSqlTableModel* stadiumModel;
-    QSqlTableModel* souvenirModel;
+    QSqlTableModel* stadiumModel{};
+    QSqlTableModel* souvenirModel{};
 };
 
 
