@@ -52,6 +52,11 @@ struct CartItem
 	int quantity = 0;
 };
 
+struct TripStops
+{
+	std::vector<Stadium> stadiums;
+};
+
 struct TripResult
 {
 	std::vector<Stadium> stadiums;

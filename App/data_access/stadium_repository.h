@@ -38,6 +38,17 @@ public:
     std::optional<int> getStadiumID(const QString& stadium_name);
     std::optional<QString> getStadiumName(int stadium_id);
 
+    //TODO : Complete the implementation of the repository - related code.
+
+    bool addStadium(const Stadium& new_staduim);
+
+    bool upDateStadiumInform(int stadium_id, const Stadium& update_staduim);
+
+    bool deleteStadium(int stadium_id);
+
+    bool stadiumNameExists(const QString& stadium_name) const;
+
+    bool teamNameExists(const QString& team_name) const;
 
 private:
     Stadium buildStadiumFromQuery(const QSqlQuery& q) const;

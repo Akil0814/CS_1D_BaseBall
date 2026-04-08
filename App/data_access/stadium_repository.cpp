@@ -221,3 +221,29 @@ Stadium StadiumRepository::buildStadiumFromQuery(const QSqlQuery& q) const
 
 	return stadium;
 }
+
+
+bool StadiumRepository::addStaduim(const Stadium& new_staduim)
+{
+    return false;
+}
+
+bool StadiumRepository::upDateStadiumInform(int stadium_id, const Stadium& update_staduim)
+{
+    return false;
+}
+
+bool StadiumRepository::deleteStadium(int stadium_id)
+{
+    return false;
+}
+
+bool StadiumRepository::stadiumNameExists(const QString& stadium_name) const
+{
+    return false;
+}
+
+bool StadiumRepository::teamNameExists(const QString& team_name) const
+{
+    return false;
+}

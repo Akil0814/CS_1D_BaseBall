@@ -12,7 +12,15 @@ class DistanceRepository
     friend class Application;
 
 public:
+    //TODO : Complete the implementation of the repository - related code.
+    std::optional<double> getDistanceBetweenStadium(int stadium_id_1, int stadium_id_2);
+    std::optional <DistanceNode> getDistanceNodeOfStadium(int stadium_id);
 
+    bool updateDistanceBetweenStadiums(int stadium_id_1, int stadium_id_2, double distance);
+
+    bool addDistanceBetweenStadiums(int stadium_id_1, int stadium_id_2, double distance);
+
+    bool removeDistanceBetweenStadiums(int stadium_id_1, int stadium_id_2);
 
 private:
     DistanceRepository(DatabaseManager& db_manager);
