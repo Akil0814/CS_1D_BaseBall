@@ -2,9 +2,9 @@
 #include <iostream>
 
 #include "main_window.h"
-#include "AdminPage/admin_page.h"
-#include "AdminPage/dashboard_page.h"
-#include "AdminPage/login_page.h"
+#include "AdminPage/adminpage.h"
+#include "AdminPage/dashboardpage.h"
+#include "AdminPage/loginpage.h"
 #include"App/application.h"
 
 void test();
