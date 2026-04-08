@@ -222,8 +222,7 @@ Stadium StadiumRepository::buildStadiumFromQuery(const QSqlQuery& q) const
 	return stadium;
 }
 
-
-bool StadiumRepository::addStaduim(const Stadium& new_staduim)
+bool StadiumRepository::addStadium(const Stadium& new_staduim)
 {
     return false;
 }
