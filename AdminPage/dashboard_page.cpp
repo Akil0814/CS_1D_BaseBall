@@ -4,11 +4,11 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_DashboardPage.h" resolved
 
-#include "dashboardpage.h"
+#include "dashboard_page.h"
 
 #include <QSqlError>
 #include <QSqlRecord>
-#include "ui_DashboardPage.h"
+#include "ui_Dashboard_Page.h"
 #include "App/application.h"
 #include <QSqlTableModel>
 

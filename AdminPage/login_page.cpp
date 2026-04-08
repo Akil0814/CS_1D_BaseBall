@@ -4,8 +4,8 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_LoginPage.h" resolved
 
-#include "loginpage.h"
-#include "ui_LoginPage.h"
+#include "login_page.h"
+#include "ui_Login_Page.h"
 #include "App/services/auth_service.h"
 #include <QMessageBox>
 

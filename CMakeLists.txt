@@ -19,15 +19,15 @@ set(PROJECT_SOURCES
         main_window.cpp
         main_window.h
         main_window.ui
-        AdminPage/adminpage.cpp
-        AdminPage/adminpage.h
-        AdminPage/adminpage.ui
-        AdminPage/loginpage.cpp
-        AdminPage/loginpage.h
-        AdminPage/loginpage.ui
-        AdminPage/dashboardpage.cpp
-        AdminPage/dashboardpage.h
-        AdminPage/dashboardpage.ui
+        AdminPage/admin_page.cpp
+        AdminPage/admin_page.h
+        AdminPage/admin_page.ui
+        AdminPage/login_page.cpp
+        AdminPage/login_page.h
+        AdminPage/login_page.ui
+        AdminPage/dashboard_page.cpp
+        AdminPage/dashboard_page.h
+        AdminPage/dashboard_page.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

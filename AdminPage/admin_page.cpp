@@ -4,8 +4,10 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_AdminPage.h" resolved
 
-#include "adminpage.h"
-#include "ui_AdminPage.h"
+#include "admin_page.h"
+
+#include <ui_Admin_Page.h>
+
 
 
 AdminPage::AdminPage(QWidget *parent) :
