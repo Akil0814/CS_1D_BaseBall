@@ -1,6 +1,7 @@
 #include "stadium_repository.h"
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QVariant>
 
 StadiumRepository::StadiumRepository(DatabaseManager& db_manager)
 	: _db_manager(db_manager) {}
@@ -163,8 +164,41 @@ std::optional<Stadium> StadiumRepository::getStadiumByStadiumName(const QString&
 
 std::optional<Stadium> StadiumRepository::getStadiumByTeamName(const QString& team_name)
 {
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return std::nullopt;
 
-	return std::nullopt;
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        SELECT
+            stadium_id,
+            team_name,
+            stadium_name,
+            seating_capacity,
+            location,
+            playing_surface,
+            league,
+            date_opened,
+            distance_to_center_field_ft,
+            distance_to_center_field_raw,
+            ballpark_typology,
+            roof_type,
+            is_expansion
+        FROM stadiums
+        WHERE team_name = ?
+        LIMIT 1;
+    )SQL"))
+		return std::nullopt;
+
+	q.addBindValue(team_name);
+
+	if (!q.exec())
+		return std::nullopt;
+
+	if (!q.next())
+		return std::nullopt;
+
+	return buildStadiumFromQuery(q);
 
 }
 
@@ -197,8 +231,29 @@ std::optional<int> StadiumRepository::getStadiumID(const QString& stadium_name)
 
 std::optional<QString> StadiumRepository::getStadiumName(int stadium_id)
 {
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return std::nullopt;
 
-	return std::nullopt;
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        SELECT stadium_name
+        FROM stadiums
+        WHERE stadium_id = ?
+        LIMIT 1;
+    )SQL"))
+		return std::nullopt;
+
+	q.addBindValue(stadium_id);
+
+	if (!q.exec())
+		return std::nullopt;
+
+	if (!q.next())
+		return std::nullopt;
+
+	return q.value("stadium_name").toString();
+
 }
 
 Stadium StadiumRepository::buildStadiumFromQuery(const QSqlQuery& q) const
@@ -224,25 +279,161 @@ Stadium StadiumRepository::buildStadiumFromQuery(const QSqlQuery& q) const
 
 bool StadiumRepository::addStadium(const Stadium& new_staduim)
 {
-    return false;
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return false;
+
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        INSERT INTO stadiums
+        (
+            stadium_id,
+            team_name,
+            stadium_name,
+            seating_capacity,
+            location,
+            playing_surface,
+            league,
+            date_opened,
+            distance_to_center_field_ft,
+            distance_to_center_field_raw,
+            ballpark_typology,
+            roof_type,
+            is_expansion
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    )SQL"))
+		return false;
+
+	if (new_staduim.stadium_id > 0)
+		q.addBindValue(new_staduim.stadium_id);
+	else
+		q.addBindValue(QVariant());
+	q.addBindValue(new_staduim.team_name);
+	q.addBindValue(new_staduim.stadium_name);
+	q.addBindValue(new_staduim.seating_capacity);
+	q.addBindValue(new_staduim.location);
+	q.addBindValue(new_staduim.playing_surface);
+	q.addBindValue(new_staduim.league);
+	q.addBindValue(new_staduim.date_opened);
+	q.addBindValue(new_staduim.distance_to_center_field_ft);
+	q.addBindValue(new_staduim.distance_to_center_field_raw);
+	q.addBindValue(new_staduim.ballpark_typology);
+	q.addBindValue(new_staduim.roof_type);
+	q.addBindValue(new_staduim.is_expansion ? 1 : 0);
+
+	return q.exec();
 }
 
 bool StadiumRepository::upDateStadiumInform(int stadium_id, const Stadium& update_staduim)
 {
-    return false;
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return false;
+
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        UPDATE stadiums
+        SET
+            team_name = ?,
+            stadium_name = ?,
+            seating_capacity = ?,
+            location = ?,
+            playing_surface = ?,
+            league = ?,
+            date_opened = ?,
+            distance_to_center_field_ft = ?,
+            distance_to_center_field_raw = ?,
+            ballpark_typology = ?,
+            roof_type = ?,
+            is_expansion = ?
+        WHERE stadium_id = ?;
+    )SQL"))
+		return false;
+
+	q.addBindValue(update_staduim.team_name);
+	q.addBindValue(update_staduim.stadium_name);
+	q.addBindValue(update_staduim.seating_capacity);
+	q.addBindValue(update_staduim.location);
+	q.addBindValue(update_staduim.playing_surface);
+	q.addBindValue(update_staduim.league);
+	q.addBindValue(update_staduim.date_opened);
+	q.addBindValue(update_staduim.distance_to_center_field_ft);
+	q.addBindValue(update_staduim.distance_to_center_field_raw);
+	q.addBindValue(update_staduim.ballpark_typology);
+	q.addBindValue(update_staduim.roof_type);
+	q.addBindValue(update_staduim.is_expansion ? 1 : 0);
+	q.addBindValue(stadium_id);
+
+	if (!q.exec())
+		return false;
+
+	return q.numRowsAffected() > 0 || getStadiumByID(stadium_id).has_value();
 }
 
 bool StadiumRepository::deleteStadium(int stadium_id)
 {
-    return false;
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return false;
+
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        DELETE FROM stadiums
+        WHERE stadium_id = ?;
+    )SQL"))
+		return false;
+
+	q.addBindValue(stadium_id);
+
+	if (!q.exec())
+		return false;
+
+	return q.numRowsAffected() > 0;
 }
 
 bool StadiumRepository::stadiumNameExists(const QString& stadium_name) const
 {
-    return false;
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return false;
+
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        SELECT 1
+        FROM stadiums
+        WHERE stadium_name = ?
+        LIMIT 1;
+    )SQL"))
+		return false;
+
+	q.addBindValue(stadium_name);
+
+	if (!q.exec())
+		return false;
+
+	return q.next();
 }
 
 bool StadiumRepository::teamNameExists(const QString& team_name) const
 {
-    return false;
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return false;
+
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        SELECT 1
+        FROM stadiums
+        WHERE team_name = ?
+        LIMIT 1;
+    )SQL"))
+		return false;
+
+	q.addBindValue(team_name);
+
+	if (!q.exec())
+		return false;
+
+	return q.next();
 }
