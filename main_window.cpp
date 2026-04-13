@@ -1,6 +1,6 @@
 #include "main_window.h"
 #include "ui_main_window.h"
-#include "browse_window.h"
+#include "browse_window/browse_window.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

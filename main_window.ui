@@ -46,7 +46,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Take Me Out to the Ballgame</string>
+      <string>[old]Take Me Out to the Ballgame</string>
      </property>
      <property name="textFormat">
       <enum>Qt::TextFormat::AutoText</enum>
@@ -120,7 +120,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>18</height>
+     <height>39</height>
     </rect>
    </property>
   </widget>
