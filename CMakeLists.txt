@@ -28,6 +28,9 @@ set(PROJECT_SOURCES
         AdminPage/dashboardpage.cpp
         AdminPage/dashboardpage.h
         AdminPage/dashboardpage.ui
+        AdminPage/souvenir_adding/add_souvenir_popup.cpp
+        AdminPage/souvenir_adding/add_souvenir_popup.h
+        AdminPage/souvenir_adding/add_souvenir_popup.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
