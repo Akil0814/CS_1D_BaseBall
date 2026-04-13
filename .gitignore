@@ -77,3 +77,7 @@ out/
 *.db
 *.db-shm
 *.db-wal
+
+# Doxygen Folders
+html
+latex

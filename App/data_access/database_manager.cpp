@@ -213,12 +213,37 @@ bool DatabaseManager::hasWarning() const
     return !_last_warning.trimmed().isEmpty();
 }
 
-QSqlDatabase DatabaseManager::getDatabaseObj() const
+QSqlDatabase DatabaseManager::getDatabaseObj()
 {
-    if (!QSqlDatabase::contains(_conn_name))
-        return QSqlDatabase();
+    _last_error.clear();
 
-    return QSqlDatabase::database(_conn_name, false);
+    if (_conn_name.isEmpty())
+    {
+        _last_error = "Database connection name is empty.";
+        return QSqlDatabase();
+    }
+
+    if (!QSqlDatabase::contains(_conn_name))
+    {
+        _last_error = "Database connection does not exist: " + _conn_name;
+        return QSqlDatabase();
+    }
+
+    QSqlDatabase db = QSqlDatabase::database(_conn_name, false);
+
+    if (!db.isValid())
+    {
+        _last_error = "Database connection is invalid: " + _conn_name;
+        return QSqlDatabase();
+    }
+
+    if (!db.isOpen())
+    {
+        _last_error = "Database connection is not open: " + _conn_name;
+        return QSqlDatabase();
+    }
+
+    return db;
 }
 
 //-------------------------------------private--------------------------------------

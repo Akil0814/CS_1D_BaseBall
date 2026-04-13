@@ -14,10 +14,14 @@ struct Stadium
 	QString location;
 	QString playing_surface;
 	QString league;
-	int date_open = 0;//in year
-	double distance_to_center_field = 0;
+	int date_opened = 0;//in year
+
+	int distance_to_center_field_ft = 0;
+	QString distance_to_center_field_raw;
+
 	QString ballpark_typology;
 	QString roof_type;
+	bool is_expansion = false;
 };
 
 struct Souvenir
@@ -46,6 +50,11 @@ struct CartItem
 {
 	Souvenir item_souvenir;
 	int quantity = 0;
+};
+
+struct TripStops
+{
+	std::vector<Stadium> stadiums;
 };
 
 struct TripResult

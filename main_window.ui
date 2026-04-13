@@ -11,110 +11,47 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Take Me Out to the Ballgame</string>
+   <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="mainContainer" native="true">
-    <property name="geometry">
-     <rect>
-      <x>170</x>
-      <y>110</y>
-      <width>451</width>
-      <height>341</height>
-     </rect>
-    </property>
-    <property name="mouseTracking">
-     <bool>true</bool>
-    </property>
-    <property name="layoutDirection">
-     <enum>Qt::LayoutDirection::LeftToRight</enum>
-    </property>
-    <widget class="QLabel" name="lblTitle">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>0</y>
-       <width>431</width>
-       <height>51</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <family>Arial Rounded MT</family>
-       <pointsize>18</pointsize>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>[old]Take Me Out to the Ballgame</string>
-     </property>
-     <property name="textFormat">
-      <enum>Qt::TextFormat::AutoText</enum>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignmentFlag::AlignCenter</set>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnBrowse">
-     <property name="geometry">
-      <rect>
-       <x>110</x>
-       <y>80</y>
-       <width>251</width>
-       <height>71</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Browse</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnTourShop">
-     <property name="geometry">
-      <rect>
-       <x>110</x>
-       <y>160</y>
-       <width>251</width>
-       <height>71</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Tour and Shop</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnAdmin">
-     <property name="geometry">
-      <rect>
-       <x>110</x>
-       <y>240</y>
-       <width>251</width>
-       <height>71</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Admin</string>
-     </property>
-    </widget>
-   </widget>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <widget class="QWidget" name="AdminTab">
+       <attribute name="title">
+        <string>Admin</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="AdminPage" name="AdminTabWidget" native="true"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Tab 2</string>
+       </attribute>
+      </widget>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -124,8 +61,15 @@
     </rect>
    </property>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>AdminPage</class>
+   <extends>QWidget</extends>
+   <header>adminpage.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

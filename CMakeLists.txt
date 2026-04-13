@@ -19,6 +19,15 @@ set(PROJECT_SOURCES
         main_window.cpp
         main_window.h
         main_window.ui
+        AdminPage/adminpage.cpp
+        AdminPage/adminpage.h
+        AdminPage/adminpage.ui
+        AdminPage/loginpage.cpp
+        AdminPage/loginpage.h
+        AdminPage/loginpage.ui
+        AdminPage/dashboardpage.cpp
+        AdminPage/dashboardpage.h
+        AdminPage/dashboardpage.ui
         main_page/main_page.cpp
         main_page/main_page.h
         main_page/main_page.ui
@@ -39,6 +48,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     # Add this right after your add_executable / qt_add_executable block
     target_include_directories(CS_1D_BaseBall PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
             ${CMAKE_CURRENT_SOURCE_DIR}/detail_window
             ${CMAKE_CURRENT_SOURCE_DIR}/browse_window
             ${CMAKE_CURRENT_SOURCE_DIR}/main_page
