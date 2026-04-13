@@ -6,6 +6,7 @@
 #include "AdminPage/dashboardpage.h"
 #include "AdminPage/loginpage.h"
 #include"App/application.h"
+#include "main_page/main_page.h"
 
 void test();
 
@@ -21,16 +22,10 @@ int main(int argc, char *argv[]){
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
-
-    // AdminPage admin_page;
-    // admin_page.show();
-    // LoginPage login_page;
-    // login_page.show();
-    // DashboardPage dashboard_page;
-    // dashboard_page.show();
-
+    main_page mainPageVar;
+    mainPageVar.show();
     test();
-    w.show();
+    // w.show();
     return a.exec();
 }
 

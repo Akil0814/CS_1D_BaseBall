@@ -28,12 +28,30 @@ set(PROJECT_SOURCES
         AdminPage/dashboardpage.cpp
         AdminPage/dashboardpage.h
         AdminPage/dashboardpage.ui
+        main_page/main_page.cpp
+        main_page/main_page.h
+        main_page/main_page.ui
+        browse_window/browse_window.cpp
+        browse_window/browse_window.h
+        browse_window/browse_window.ui
+        detail_window/detail_window.cpp
+        detail_window/detail_window.h
+        detail_window/detail_window.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+    )
+
+    # Add this right after your add_executable / qt_add_executable block
+    target_include_directories(CS_1D_BaseBall PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
+            ${CMAKE_CURRENT_SOURCE_DIR}/detail_window
+            ${CMAKE_CURRENT_SOURCE_DIR}/browse_window
+            ${CMAKE_CURRENT_SOURCE_DIR}/main_page
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET CS_1D_BaseBall APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -60,10 +78,6 @@ target_link_libraries(CS_1D_BaseBall PRIVATE
     Qt6::Sql
     Qt6::Core
     app
-)
-target_include_directories(CS_1D_BaseBall PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
-    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
