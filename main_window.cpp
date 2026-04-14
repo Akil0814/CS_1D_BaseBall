@@ -8,10 +8,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    connect(ui->btnBrowse, &QPushButton::clicked, this, [this]() {
-        BrowseWindow *browseWindow = new BrowseWindow(this);
-        browseWindow->show();
-    });
+    // connect(ui->btnBrowse, &QPushButton::clicked, this, [this]() {
+    //     BrowseWindow *browseWindow = new BrowseWindow(this);
+    //     browseWindow->show();
+    // });
 }
 
 MainWindow::~MainWindow()

@@ -22,10 +22,8 @@ int main(int argc, char *argv[]){
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
-    main_page mainPageVar;
-    mainPageVar.show();
     test();
-    // w.show();
+    w.show();
     return a.exec();
 }
 

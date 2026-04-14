@@ -43,6 +43,11 @@
        <attribute name="title">
         <string>Tab 2</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="main_page" name="widget" native="true"/>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -67,6 +72,12 @@
    <class>AdminPage</class>
    <extends>QWidget</extends>
    <header>adminpage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>main_page</class>
+   <extends>QWidget</extends>
+   <header>main_page.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
