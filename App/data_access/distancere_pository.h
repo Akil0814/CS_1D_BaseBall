@@ -12,7 +12,6 @@ class DistanceRepository
     friend class Application;
 
 public:
-    //TODO : Complete the implementation of the repository - related code.
     std::optional<double> getDistanceBetweenStadium(int stadium_id_1, int stadium_id_2);
     std::optional <DistanceNode> getDistanceNodeOfStadium(int stadium_id);
 
