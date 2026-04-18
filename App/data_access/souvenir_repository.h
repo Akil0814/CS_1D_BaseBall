@@ -12,8 +12,6 @@ class SouvenirRepository
     friend class Application;
 
 public:
-    //TODO : Complete the implementation of the repository - related code.
-
     std::vector<Souvenir> getSouvenirsByStadiumID(int stadium_id);
     std::optional<Souvenir> getSouvenirByID(int souvenir_id);
     std::optional<int> getSouvenirID(int stadium_id, const QString& souvenir_name);
