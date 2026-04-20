@@ -28,9 +28,10 @@ set(PROJECT_SOURCES
         AdminPage/dashboardpage.cpp
         AdminPage/dashboardpage.h
         AdminPage/dashboardpage.ui
-        AdminPage/souvenir_adding/add_souvenir_popup.cpp
-        AdminPage/souvenir_adding/add_souvenir_popup.h
-        AdminPage/souvenir_adding/add_souvenir_popup.ui
+        AdminPage/souvenir_adding/addsouvenirpopup.cpp
+        AdminPage/souvenir_adding/addsouvenirpopup.h
+        AdminPage/souvenir_adding/addsouvenirpopup.ui
+
         main_page/main_page.cpp
         main_page/main_page.h
         main_page/main_page.ui
@@ -46,6 +47,9 @@ if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+
+        AdminPage/souvenir_adding/addsouvenirpopup.h AdminPage/souvenir_adding/addsouvenirpopup.cpp AdminPage/souvenir_adding/addsouvenirpopup.ui
+
     )
 else()
     add_executable(CS_1D_BaseBall ${PROJECT_SOURCES})
@@ -104,6 +108,6 @@ install(TARGETS CS_1D_BaseBall
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(CS_1D_BaseBall)
-endif()
+#if(QT_VERSION_MAJOR EQUAL 6)
+#    qt_finalize_executable(CS_1D_BaseBall)
+#endif()
