@@ -7,11 +7,10 @@ StadiumRepository::StadiumRepository(DatabaseManager& db_manager)
 	: _db_manager(db_manager) {}
 
 
-std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, LeagueFilter league)
-{
+std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, LeagueFilter league) const {
 	std::vector<Stadium> tmp;
 
-	QSqlDatabase db = _db_manager.getDatabaseObj();
+	const QSqlDatabase db = _db_manager.getDatabaseObj();
 	if (!db.isValid() || !db.isOpen())
 		return tmp;
 
