@@ -1,0 +1,64 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+class Application <<singleton>> {
+  + {static} instance() : Application*
+  + init() : bool
+
+  + stadiumRepository() : StadiumRepository*
+  + souvenirRepository() : SouvenirRepository*
+  + distanceRepository() : DistanceRepository*
+
+  + authService() : AuthService*
+  + tripPlanner() : TripPlanner*
+
+  + isAuthAvailable() : bool
+  + isSouvenirAvailable() : bool
+  + isDistanceAvailable() : bool
+  + isTripPlannerAvailable() : bool
+  + hasError() : bool
+  + hasWarning() : bool
+
+  + lastError() : const QString&
+  + lastWarning() : const QString&
+
+  + databaseManager() : DatabaseManager*
+
+  - resolvePaths() : bool
+  - setUnavailableModuleError(module_name : const QString&) : void
+
+  - Application()
+  - ~Application()
+
+  - _last_error : QString
+  - _last_warning : QString
+  - _data_dir : QString
+  - _db_path : QString
+  - _key_path : QString
+
+  - souvenir_data_available : bool
+  - distance_data_available : bool
+
+  - _db_manager : std::unique_ptr<DatabaseManager>
+  - _stadium_repo : std::unique_ptr<StadiumRepository>
+  - _souvenir_repo : std::unique_ptr<SouvenirRepository>
+  - _distance_repo : std::unique_ptr<DistanceRepository>
+  - _auth_service : std::unique_ptr<AuthService>
+  - _trip_planner : std::unique_ptr<TripPlanner>
+}
+
+class DatabaseManager
+class StadiumRepository
+class SouvenirRepository
+class DistanceRepository
+class AuthService
+class TripPlanner
+
+Application "1" *-- "0..1" DatabaseManager : owns
+Application "1" *-- "0..1" StadiumRepository : owns
+Application "1" *-- "0..1" SouvenirRepository : owns
+Application "1" *-- "0..1" DistanceRepository : owns
+Application "1" *-- "0..1" AuthService : owns
+Application "1" *-- "0..1" TripPlanner : owns
+
+@enduml

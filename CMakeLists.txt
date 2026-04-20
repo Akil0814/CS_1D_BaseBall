@@ -31,59 +31,73 @@ set(PROJECT_SOURCES
         AdminPage/souvenir_adding/add_souvenir_popup.cpp
         AdminPage/souvenir_adding/add_souvenir_popup.h
         AdminPage/souvenir_adding/add_souvenir_popup.ui
+        main_page/main_page.cpp
+        main_page/main_page.h
+        main_page/main_page.ui
+        browse_window/browse_window.cpp
+        browse_window/browse_window.h
+        browse_window/browse_window.ui
+        detail_window/detail_window.cpp
+        detail_window/detail_window.h
+        detail_window/detail_window.ui
 )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET CS_1D_BaseBall APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-
 else()
-    if(ANDROID)
-        add_library(CS_1D_BaseBall SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(CS_1D_BaseBall
-            ${PROJECT_SOURCES}
-        )
-    endif()
+    add_executable(CS_1D_BaseBall ${PROJECT_SOURCES})
 endif()
 
-
-target_link_libraries(CS_1D_BaseBall PRIVATE 
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt6::Sql
-    Qt6::Core
-    app
-)
 target_include_directories(CS_1D_BaseBall PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
-    ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
+        ${CMAKE_CURRENT_SOURCE_DIR}/main_page
+        ${CMAKE_CURRENT_SOURCE_DIR}/browse_window
+        ${CMAKE_CURRENT_SOURCE_DIR}/detail_window
 )
 
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.CS_1D_BaseBall)
-endif()
+target_link_libraries(CS_1D_BaseBall PRIVATE
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Sql
+        Qt${QT_VERSION_MAJOR}::Core
+        app
+)
+
 set_target_properties(CS_1D_BaseBall PROPERTIES
-    ${BUNDLE_ID_OPTION}
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
-     WIN32_EXECUTABLE FALSE #FALSE for testing only
+        MACOSX_BUNDLE TRUE
+        WIN32_EXECUTABLE FALSE
 )
 
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(CS_1D_BaseBall)
+endif()
+
+# =====================================================
+# CLI TEST EXECUTABLE (IMPORTANT PART)
+# =====================================================
+add_executable(CS_1D_BaseBall_CLI
+        App/services/trip_planner_cli.cpp
+)
+
+target_include_directories(CS_1D_BaseBall_CLI PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/App
+)
+
+target_link_libraries(CS_1D_BaseBall_CLI PRIVATE
+        app
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Sql
+)
+
+# =====================================================
+# INSTALL
+# =====================================================
 include(GNUInstallDirs)
+
 install(TARGETS CS_1D_BaseBall
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

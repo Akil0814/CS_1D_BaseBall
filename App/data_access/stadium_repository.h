@@ -29,7 +29,7 @@ public:
 
 public:
 
-    std::vector<Stadium> getAllStadiums(StadiumSortBy sort_by, LeagueFilter league = LeagueFilter::All);
+    std::vector<Stadium> getAllStadiums(StadiumSortBy sort_by, LeagueFilter league = LeagueFilter::All) const;
 
     std::optional<Stadium> getStadiumByID(int stadium_id);
     std::optional<Stadium> getStadiumByStadiumName(const QString& stadium_name);
@@ -49,6 +49,8 @@ public:
     bool stadiumNameExists(const QString& stadium_name) const;
 
     bool teamNameExists(const QString& team_name) const;
+
+    DatabaseManager& getDatabaseManager() const { return _db_manager; }
 
 private:
     Stadium buildStadiumFromQuery(const QSqlQuery& q) const;

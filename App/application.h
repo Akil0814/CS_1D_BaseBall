@@ -11,6 +11,7 @@
 #include "data_access/souvenir_repository.h"
 #include "data_access/stadium_repository.h"
 
+
 #include "services/auth_service.h"
 #include "services/trip_planner.h"
 
@@ -21,6 +22,9 @@ public:
     static Application* instance();
     // Initialize application paths, services, and repositories.
     bool init();
+
+    //For trip_planner_cli (testing)
+    TripPlanner* getTripPlanner();
 
     // Return the stadium repository.
     StadiumRepository* stadiumRepository();
@@ -66,6 +70,8 @@ private:
     Application(Application&& move) = delete;
     Application& operator=(Application&& move) = delete;
     ~Application();
+    //for trip_planner_cli, testing
+    friend class TripPlannerCLI;
 
 private:
     QString _last_error = {};
