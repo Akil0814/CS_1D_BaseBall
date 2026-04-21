@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>680</width>
+    <height>411</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,8 +25,8 @@
      <widget class="QLabel" name="lblTitle">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>0</y>
+        <x>130</x>
+        <y>20</y>
         <width>431</width>
         <height>51</height>
        </rect>
@@ -51,8 +51,8 @@
      <widget class="QPushButton" name="btnBrowse">
       <property name="geometry">
        <rect>
-        <x>110</x>
-        <y>80</y>
+        <x>220</x>
+        <y>140</y>
         <width>251</width>
         <height>71</height>
        </rect>
@@ -70,8 +70,8 @@
      <widget class="QPushButton" name="btnTourShop">
       <property name="geometry">
        <rect>
-        <x>110</x>
-        <y>160</y>
+        <x>220</x>
+        <y>230</y>
         <width>251</width>
         <height>71</height>
        </rect>
@@ -89,8 +89,8 @@
      <widget class="QPushButton" name="btnAdmin">
       <property name="geometry">
        <rect>
-        <x>110</x>
-        <y>240</y>
+        <x>220</x>
+        <y>320</y>
         <width>251</width>
         <height>71</height>
        </rect>

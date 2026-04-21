@@ -17,6 +17,19 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="MLB">
+       <attribute name="title">
+        <string>Tab 2</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="main_page" name="widget" native="true"/>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="AdminTab">
        <attribute name="title">
         <string>Admin</string>
@@ -39,27 +52,17 @@
         </item>
        </layout>
       </widget>
+<<<<<<< Updated upstream
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
         <string>Tab 2</string>
        </attribute>
       </widget>
+=======
+>>>>>>> Stashed changes
      </widget>
     </item>
    </layout>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>39</height>
-    </rect>
-   </property>
   </widget>
  </widget>
  <customwidgets>
