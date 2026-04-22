@@ -6,8 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
+<<<<<<< Updated upstream
     <width>680</width>
     <height>411</height>
+=======
+    <width>631</width>
+    <height>438</height>
+>>>>>>> Stashed changes
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,8 +30,13 @@
      <widget class="QLabel" name="lblTitle">
       <property name="geometry">
        <rect>
+<<<<<<< Updated upstream
         <x>130</x>
         <y>20</y>
+=======
+        <x>170</x>
+        <y>150</y>
+>>>>>>> Stashed changes
         <width>431</width>
         <height>51</height>
        </rect>
@@ -51,8 +61,13 @@
      <widget class="QPushButton" name="btnBrowse">
       <property name="geometry">
        <rect>
+<<<<<<< Updated upstream
         <x>220</x>
         <y>140</y>
+=======
+        <x>260</x>
+        <y>230</y>
+>>>>>>> Stashed changes
         <width>251</width>
         <height>71</height>
        </rect>
@@ -70,8 +85,13 @@
      <widget class="QPushButton" name="btnTourShop">
       <property name="geometry">
        <rect>
+<<<<<<< Updated upstream
         <x>220</x>
         <y>230</y>
+=======
+        <x>260</x>
+        <y>310</y>
+>>>>>>> Stashed changes
         <width>251</width>
         <height>71</height>
        </rect>
@@ -86,6 +106,7 @@
        <string>Tour and Shop</string>
       </property>
      </widget>
+<<<<<<< Updated upstream
      <widget class="QPushButton" name="btnAdmin">
       <property name="geometry">
        <rect>
@@ -105,6 +126,8 @@
        <string>Admin</string>
       </property>
      </widget>
+=======
+>>>>>>> Stashed changes
     </widget>
    </item>
   </layout>

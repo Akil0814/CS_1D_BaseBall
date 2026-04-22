@@ -7,6 +7,7 @@ StadiumRepository::StadiumRepository(DatabaseManager& db_manager)
 	: _db_manager(db_manager) {}
 
 
+<<<<<<< Updated upstream
 std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, LeagueFilter league)
 {
 	std::vector<Stadium> tmp;
@@ -14,6 +15,17 @@ std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, Le
 	QSqlDatabase db = _db_manager.getDatabaseObj();
 	if (!db.isValid() || !db.isOpen())
 		return tmp;
+=======
+std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by,
+                                                       LeagueFilter league,
+                                                       bool browse_by_stadium) const
+{
+    std::vector<Stadium> tmp;
+
+    const QSqlDatabase db = _db_manager.getDatabaseObj();
+    if (!db.isValid() || !db.isOpen())
+        return tmp;
+>>>>>>> Stashed changes
 
     QString sql = R"(
         SELECT
@@ -33,28 +45,55 @@ std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, Le
         FROM stadiums
     )";
 
+    QString secondarySort;
+    if (browse_by_stadium)
+        secondarySort = "stadium_name ASC, team_name ASC";
+    else
+        secondarySort = "team_name ASC, stadium_name ASC";
+
     QString sort;
     switch (sort_by)
     {
     case StadiumSortBy::TeamName:
         sort = "team_name ASC, stadium_name ASC";
         break;
+
     case StadiumSortBy::StadiumName:
         sort = "stadium_name ASC, team_name ASC";
         break;
+
+    case StadiumSortBy::League:
+        sort = "CASE WHEN league = 'American' THEN 0 ELSE 1 END ASC, " + secondarySort;
+        break;
+
     case StadiumSortBy::DateOpened:
         sort = "date_opened ASC, stadium_name ASC";
         break;
+
     case StadiumSortBy::SeatingCapacity:
         sort = "seating_capacity ASC, stadium_name ASC";
         break;
+
+    case StadiumSortBy::DistanceToCenterField:
+        sort = "distance_to_center_field_ft ASC, stadium_name ASC";
+        break;
+
     case StadiumSortBy::Typology:
         sort = "ballpark_typology ASC, stadium_name ASC";
         break;
+
+    case StadiumSortBy::OpenRoof:
+        sort =
+            "CASE "
+            "WHEN LOWER(roof_type) LIKE '%open%' THEN 0 "
+            "ELSE 1 "
+            "END ASC, " + secondarySort;
+        break;
+
     default:
         return tmp;
     }
-    
+
     switch (league)
     {
     case LeagueFilter::All:
@@ -68,7 +107,7 @@ std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, Le
     default:
         return tmp;
     }
-  
+
     sql += " ORDER BY " + sort;
 
     QSqlQuery q(db);
@@ -83,7 +122,7 @@ std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by, Le
         tmp.push_back(buildStadiumFromQuery(q));
     }
 
-	return tmp;
+    return tmp;
 }
 
 std::optional<Stadium> StadiumRepository::getStadiumByID(int stadium_id)

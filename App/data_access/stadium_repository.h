@@ -15,9 +15,12 @@ public:
     {
         TeamName,
         StadiumName,
+        League,
         DateOpened,
         SeatingCapacity,
-        Typology
+        DistanceToCenterField,
+        Typology,
+        OpenRoof
     };
 
     enum class LeagueFilter
@@ -29,7 +32,13 @@ public:
 
 public:
 
+<<<<<<< Updated upstream
     std::vector<Stadium> getAllStadiums(StadiumSortBy sort_by, LeagueFilter league = LeagueFilter::All);
+=======
+    std::vector<Stadium> getAllStadiums(StadiumSortBy sort_by,
+                                        LeagueFilter league = LeagueFilter::All,
+                                        bool browse_by_stadium = false) const;
+>>>>>>> Stashed changes
 
     std::optional<Stadium> getStadiumByID(int stadium_id);
     std::optional<Stadium> getStadiumByStadiumName(const QString& stadium_name);
