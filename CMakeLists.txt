@@ -19,6 +19,7 @@ set(PROJECT_SOURCES
         main_window.cpp
         main_window.h
         main_window.ui
+
         AdminPage/adminpage.cpp
         AdminPage/adminpage.h
         AdminPage/adminpage.ui
@@ -28,9 +29,9 @@ set(PROJECT_SOURCES
         AdminPage/dashboardpage.cpp
         AdminPage/dashboardpage.h
         AdminPage/dashboardpage.ui
-        AdminPage/souvenir_adding/addsouvenirpopup.cpp
-        AdminPage/souvenir_adding/addsouvenirpopup.h
-        AdminPage/souvenir_adding/addsouvenirpopup.ui
+        AdminPage/souvenir_adding/newsouvenirpopup.h
+        AdminPage/souvenir_adding/newsouvenirpopup.cpp
+        AdminPage/souvenir_adding/newsouvenirpopup.ui
 
         main_page/main_page.cpp
         main_page/main_page.h
@@ -47,8 +48,6 @@ if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-
-        AdminPage/souvenir_adding/addsouvenirpopup.h AdminPage/souvenir_adding/addsouvenirpopup.cpp AdminPage/souvenir_adding/addsouvenirpopup.ui
 
     )
 else()

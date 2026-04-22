@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <ui version="4.0">
- <class>add_souvenir_popup</class>
- <widget class="QDialog" name="add_souvenir_popup">
+ <class>newSouvenirPopup</class>
+ <widget class="QDialog" name="newSouvenirPopup">
   <property name="geometry">
    <rect>
     <x>0</x>
