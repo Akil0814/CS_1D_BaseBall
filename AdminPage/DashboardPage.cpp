@@ -1,4 +1,4 @@
-//
+ //
 // Created by Erfan Tavassoli on 4/6/26.
 //
 
@@ -11,6 +11,7 @@
 #include "ui_DashboardPage.h"
 #include "App/application.h"
 #include <QSqlTableModel>
+#include <souvenir_adding/newsouvenirpopup.h>
 
 
 DashboardPage::DashboardPage(QWidget *parent) :
@@ -146,3 +147,43 @@ void DashboardPage::setupSouvenirTableFormatting() {
     header->setSectionResizeMode(2, QHeaderView::Stretch);
     header->setSectionResizeMode(3, QHeaderView::ResizeToContents);
 }
+
+
+void DashboardPage::on_addSouvenirButton_clicked()
+{
+    auto stadiumIndex = ui->stadiumList->currentIndex();
+
+    if (stadiumIndex.isValid()) {
+        QString stadiumName = stadiumIndex.data().toString();
+
+        auto stadium = APP->stadiumRepository()->getStadiumByStadiumName(stadiumName);
+
+        newSouvenirPopup dialog(this);
+
+        if (dialog.exec() == QDialog::Accepted)
+        {
+            QString name = dialog.getName();
+            double price = dialog.getPrice();
+
+            // Call your DB/helper function here
+            // addSouvenirToDatabase(stadiumIndex, name, price);
+            Souvenir item;
+
+            item.owner_stadium_id = stadium->stadium_id;
+            item.name = name;
+            item.price = price;
+
+            APP->souvenirRepository()->addSouvenir(stadium->stadium_id, item);
+
+            qDebug() << name << price;
+
+            souvenirModel->select();
+        }
+    }
+
+    // if (stadiumIndex < 0)
+        // return; // or show warning
+
+
+}
+

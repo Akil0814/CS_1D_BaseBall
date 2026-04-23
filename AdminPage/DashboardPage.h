@@ -29,6 +29,9 @@ public:
     void setupSouvenirFiltering();
     void setupSouvenirTableFormatting();
 
+private slots:
+    void on_addSouvenirButton_clicked();
+
 private:
     Ui::DashboardPage *ui;
     QSqlTableModel* stadiumModel{};
