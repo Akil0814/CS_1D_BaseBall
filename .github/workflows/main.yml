@@ -1,10 +1,10 @@
-name: Build Self-Contained Windows App
+name: Nightly Build - Self-Contained Windows App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
   workflow_dispatch: # Allows you to run this manually from the Actions tab
 
 jobs:
@@ -52,3 +52,4 @@ jobs:
         with:
           name: CS_1D_BaseBall-Windows-SelfContained
           path: CS_1D_BaseBall_Windows.zip
+          retention-days: 1 # delete the file after 1 day
