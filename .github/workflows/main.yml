@@ -15,6 +15,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache Qt
+        uses: actions/cache@v4
+        with:
+          path: C:\Qt
+          key: qt-${{ runner.os }}-6.6.2
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: cmake-deps-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+
       # This action installs Qt 6 and automatically handles caching
       # to prevent long download times on future runs
       - name: Install Qt
@@ -24,6 +36,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
+          dir: 'C:\Qt'
 
       # Sets up the Microsoft Visual C++ compiler environment
       - name: Setup MSVC
