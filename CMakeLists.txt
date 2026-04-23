@@ -20,15 +20,15 @@ set(PROJECT_SOURCES
         main_window.h
         main_window.ui
 
-        AdminPage/adminpage.cpp
-        AdminPage/adminpage.h
-        AdminPage/adminpage.ui
-        AdminPage/loginpage.cpp
-        AdminPage/loginpage.h
-        AdminPage/loginpage.ui
-        AdminPage/dashboardpage.cpp
-        AdminPage/dashboardpage.h
-        AdminPage/dashboardpage.ui
+        AdminPage/AdminPage.cpp
+        AdminPage/AdminPage.h
+        AdminPage/AdminPage.ui
+        AdminPage/LoginPage.cpp
+        AdminPage/LoginPage.h
+        AdminPage/LoginPage.ui
+        AdminPage/DashboardPage.cpp
+        AdminPage/DashboardPage.h
+        AdminPage/DashboardPage.ui
         AdminPage/souvenir_adding/newsouvenirpopup.h
         AdminPage/souvenir_adding/newsouvenirpopup.cpp
         AdminPage/souvenir_adding/newsouvenirpopup.ui
