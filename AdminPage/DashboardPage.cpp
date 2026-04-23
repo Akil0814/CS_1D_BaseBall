@@ -165,8 +165,6 @@ void DashboardPage::on_addSouvenirButton_clicked()
             QString name = dialog.getName();
             double price = dialog.getPrice();
 
-            // Call your DB/helper function here
-            // addSouvenirToDatabase(stadiumIndex, name, price);
             Souvenir item;
 
             item.owner_stadium_id = stadium->stadium_id;
@@ -181,9 +179,24 @@ void DashboardPage::on_addSouvenirButton_clicked()
         }
     }
 
-    // if (stadiumIndex < 0)
-        // return; // or show warning
-
-
+    return;
 }
+
+
+void DashboardPage::on_removeSouvenirButton_clicked()
+{
+    QModelIndex index = ui->souvenirTableView->currentIndex();
+
+    if (!index.isValid())
+        return; // nothing selected
+
+    int row = index.row();
+
+    int id = souvenirModel->data(souvenirModel->index(row, 0)).toInt();
+
+    APP->souvenirRepository()->deleteSouvenir(id);
+
+    souvenirModel->select();
+}
+
 

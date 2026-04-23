@@ -32,6 +32,8 @@ public:
 private slots:
     void on_addSouvenirButton_clicked();
 
+    void on_removeSouvenirButton_clicked();
+
 private:
     Ui::DashboardPage *ui;
     QSqlTableModel* stadiumModel{};
