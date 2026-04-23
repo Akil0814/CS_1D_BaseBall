@@ -20,13 +20,9 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-<<<<<<< Updated upstream
       <widget class="QWidget" name="MLB">
-=======
-      <widget class="QWidget" name="tab_2">
->>>>>>> Stashed changes
        <attribute name="title">
-        <string>Tab 2</string>
+        <string>MLB</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -56,23 +52,10 @@
         </item>
        </layout>
       </widget>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-      <widget class="QWidget" name="tab_2">
-       <attribute name="title">
-        <string>Tab 2</string>
-       </attribute>
-      </widget>
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
      </widget>
     </item>
    </layout>
   </widget>
-<<<<<<< Updated upstream
-=======
   <widget class="QMenuBar" name="menubar">
    <property name="enabled">
     <bool>true</bool>
@@ -82,17 +65,23 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>18</height>
+     <height>33</height>
     </rect>
    </property>
   </widget>
->>>>>>> Stashed changes
+  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <customwidgets>
   <customwidget>
    <class>AdminPage</class>
    <extends>QWidget</extends>
    <header>adminpage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>main_page</class>
+   <extends>QWidget</extends>
+   <header>main_page.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -118,11 +118,6 @@
          </item>
          <item>
           <property name="text">
-           <string>Location</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
            <string>Date Opened</string>
           </property>
          </item>

@@ -13,12 +13,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-<<<<<<< Updated upstream
-    connect(ui->btnBrowse, &QPushButton::clicked, this, [this]() {
-        BrowseWindow *browseWindow = new BrowseWindow(this);
-        browseWindow->show();
-    });
-=======
     // Buttons live inside the embedded main_page widget
     QPushButton *btnBrowse = ui->widget->findChild<QPushButton*>("btnBrowse");
     QPushButton *btnAdmin = ui->widget->findChild<QPushButton*>("btnAdmin");
@@ -37,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent)
             ui->tabWidget->setCurrentWidget(ui->AdminTab);
         });
     }
->>>>>>> Stashed changes
 }
 
 MainWindow::~MainWindow()

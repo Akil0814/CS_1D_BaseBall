@@ -6,13 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-<<<<<<< Updated upstream
     <width>680</width>
     <height>411</height>
-=======
-    <width>631</width>
-    <height>438</height>
->>>>>>> Stashed changes
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,18 +20,13 @@
       <bool>true</bool>
      </property>
      <property name="layoutDirection">
-      <enum>Qt::LayoutDirection::LeftToRight</enum>
+      <enum>Qt::LeftToRight</enum>
      </property>
      <widget class="QLabel" name="lblTitle">
       <property name="geometry">
        <rect>
-<<<<<<< Updated upstream
         <x>130</x>
         <y>20</y>
-=======
-        <x>170</x>
-        <y>150</y>
->>>>>>> Stashed changes
         <width>431</width>
         <height>51</height>
        </rect>
@@ -52,22 +42,17 @@
        <string>Take Me Out to the Ballgame</string>
       </property>
       <property name="textFormat">
-       <enum>Qt::TextFormat::AutoText</enum>
+       <enum>Qt::AutoText</enum>
       </property>
       <property name="alignment">
-       <set>Qt::AlignmentFlag::AlignCenter</set>
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QPushButton" name="btnBrowse">
       <property name="geometry">
        <rect>
-<<<<<<< Updated upstream
         <x>220</x>
         <y>140</y>
-=======
-        <x>260</x>
-        <y>230</y>
->>>>>>> Stashed changes
         <width>251</width>
         <height>71</height>
        </rect>
@@ -85,13 +70,8 @@
      <widget class="QPushButton" name="btnTourShop">
       <property name="geometry">
        <rect>
-<<<<<<< Updated upstream
         <x>220</x>
         <y>230</y>
-=======
-        <x>260</x>
-        <y>310</y>
->>>>>>> Stashed changes
         <width>251</width>
         <height>71</height>
        </rect>
@@ -106,28 +86,6 @@
        <string>Tour and Shop</string>
       </property>
      </widget>
-<<<<<<< Updated upstream
-     <widget class="QPushButton" name="btnAdmin">
-      <property name="geometry">
-       <rect>
-        <x>220</x>
-        <y>320</y>
-        <width>251</width>
-        <height>71</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Admin</string>
-      </property>
-     </widget>
-=======
->>>>>>> Stashed changes
     </widget>
    </item>
   </layout>

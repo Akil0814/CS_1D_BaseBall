@@ -20,17 +20,6 @@ public:
 
 private:
     void loadBrowseTable();
-<<<<<<< Updated upstream
-    void setupTableForTeamView();
-    void setupTableForStadiumView();
-    StadiumRepository::LeagueFilter currentLeagueFilter() const;
-    StadiumRepository::StadiumSortBy currentSortOption() const;
-    Stadium selectedStadiumFromCurrentRow() const;
-
-private:
-    Ui::browse_window *ui;
-    std::vector<Stadium> _currentStadiums;
-=======
     void setupTable();
     StadiumRepository::StadiumSortBy getSelectedSort() const;
     StadiumRepository::LeagueFilter getSelectedLeague() const;
@@ -40,7 +29,6 @@ private:
 private:
     Ui::browse_window *ui;
     std::vector<Stadium> stadiums;
->>>>>>> Stashed changes
 };
 
 #endif // BROWSE_WINDOW_H
