@@ -1,0 +1,54 @@
+name: Build Self-Contained Windows App
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows you to run this manually from the Actions tab
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # This action installs Qt 6 and automatically handles caching
+      # to prevent long download times on future runs
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.6.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+
+      # Sets up the Microsoft Visual C++ compiler environment
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Project
+        run: cmake --build build --config Release
+
+      - name: Gather Qt Dependencies (windeployqt)
+        run: |
+          # Run windeployqt on both your GUI and CLI executables
+          # This pulls all necessary DLLs into the build\Release directory
+          windeployqt build\Release\CS_1D_BaseBall.exe
+          windeployqt build\Release\CS_1D_BaseBall_CLI.exe
+
+      - name: Package into Self-Contained Zip
+        run: |
+          # Compress the Release folder (which now contains the .exe and all DLLs)
+          Compress-Archive -Path build\Release\* -DestinationPath CS_1D_BaseBall_Windows.zip
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CS_1D_BaseBall-Windows-SelfContained
+          path: CS_1D_BaseBall_Windows.zip
