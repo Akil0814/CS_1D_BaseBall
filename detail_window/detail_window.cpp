@@ -5,6 +5,8 @@
 #include <QHeaderView>
 #include <QPushButton>
 #include <QTableWidgetItem>
+#include <QPixmap>
+#include <QFile>
 
 DetailWindow::DetailWindow(const Stadium& stadium, QWidget *parent)
     : QMainWindow(parent)
@@ -15,6 +17,7 @@ DetailWindow::DetailWindow(const Stadium& stadium, QWidget *parent)
 
     loadStadiumDetails();
     loadSouvenirs();
+    loadStadiumImage();
 
     connect(ui->btnClose, &QPushButton::clicked, this, &DetailWindow::close);
 }
@@ -83,5 +86,27 @@ void DetailWindow::loadSouvenirs()
         const Souvenir& s = souvenirs[row];
         ui->tblSouvenirs->setItem(row, 0, new QTableWidgetItem(s.name));
         ui->tblSouvenirs->setItem(row, 1, new QTableWidgetItem("$" + QString::number(s.price, 'f', 2)));
+    }
+}
+void DetailWindow::loadStadiumImage()
+{
+    QString imagePath = "images/stadiums/" + QString::number(currentStadium.stadium_id) + ".jpg";
+
+    QPixmap pix;
+
+    if (QFile::exists(imagePath) && pix.load(imagePath))
+    {
+        ui->lblStadiumImage->setPixmap(
+            pix.scaled(ui->lblStadiumImage->size(),
+                       Qt::KeepAspectRatio,
+                       Qt::SmoothTransformation)
+            );
+        ui->lblStadiumImage->setAlignment(Qt::AlignCenter);
+        ui->lblStadiumImage->setText("");
+    }
+    else
+    {
+        ui->lblStadiumImage->setText("No image available");
+        ui->lblStadiumImage->setAlignment(Qt::AlignCenter);
     }
 }

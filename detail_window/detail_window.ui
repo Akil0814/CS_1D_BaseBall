@@ -249,6 +249,22 @@
         </property>
        </column>
       </widget>
+      <widget class="QLabel" name="lblStadiumImage">
+       <property name="geometry">
+        <rect>
+         <x>490</x>
+         <y>270</y>
+         <width>251</width>
+         <height>181</height>
+        </rect>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::Shape::Box</enum>
+       </property>
+       <property name="text">
+        <string>No image</string>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>

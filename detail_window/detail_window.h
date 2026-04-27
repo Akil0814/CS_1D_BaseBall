@@ -20,6 +20,7 @@ public:
 private:
     void loadStadiumDetails();
     void loadSouvenirs();
+    void loadStadiumImage();
 
 private:
     Ui::detail_window *ui;
