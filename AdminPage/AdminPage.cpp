@@ -4,7 +4,7 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_AdminPage.h" resolved
 
-#include "adminpage.h"
+#include "AdminPage.h"
 #include "ui_AdminPage.h"
 
 

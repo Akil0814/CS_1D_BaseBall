@@ -62,7 +62,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>39</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>
@@ -71,7 +71,7 @@
   <customwidget>
    <class>AdminPage</class>
    <extends>QWidget</extends>
-   <header>adminpage.h</header>
+   <header>AdminPage.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
