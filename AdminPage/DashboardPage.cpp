@@ -1,16 +1,17 @@
-//
+ //
 // Created by Erfan Tavassoli on 4/6/26.
 //
 
 // You may need to build the project (run Qt uic code generator) to get "ui_DashboardPage.h" resolved
 
-#include "dashboardpage.h"
+#include "DashboardPage.h"
 
 #include <QSqlError>
 #include <QSqlRecord>
 #include "ui_DashboardPage.h"
 #include "App/application.h"
 #include <QSqlTableModel>
+#include <souvenir_adding/newsouvenirpopup.h>
 
 
 DashboardPage::DashboardPage(QWidget *parent) :
@@ -146,3 +147,56 @@ void DashboardPage::setupSouvenirTableFormatting() {
     header->setSectionResizeMode(2, QHeaderView::Stretch);
     header->setSectionResizeMode(3, QHeaderView::ResizeToContents);
 }
+
+
+void DashboardPage::on_addSouvenirButton_clicked()
+{
+    auto stadiumIndex = ui->stadiumList->currentIndex();
+
+    if (stadiumIndex.isValid()) {
+        QString stadiumName = stadiumIndex.data().toString();
+
+        auto stadium = APP->stadiumRepository()->getStadiumByStadiumName(stadiumName);
+
+        newSouvenirPopup dialog(this);
+
+        if (dialog.exec() == QDialog::Accepted)
+        {
+            QString name = dialog.getName();
+            double price = dialog.getPrice();
+
+            Souvenir item;
+
+            item.owner_stadium_id = stadium->stadium_id;
+            item.name = name;
+            item.price = price;
+
+            APP->souvenirRepository()->addSouvenir(stadium->stadium_id, item);
+
+            qDebug() << name << price;
+
+            souvenirModel->select();
+        }
+    }
+
+    return;
+}
+
+
+void DashboardPage::on_removeSouvenirButton_clicked()
+{
+    QModelIndex index = ui->souvenirTableView->currentIndex();
+
+    if (!index.isValid())
+        return; // nothing selected
+
+    int row = index.row();
+
+    int id = souvenirModel->data(souvenirModel->index(row, 0)).toInt();
+
+    APP->souvenirRepository()->deleteSouvenir(id);
+
+    souvenirModel->select();
+}
+
+

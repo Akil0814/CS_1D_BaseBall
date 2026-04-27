@@ -87,7 +87,13 @@
   <customwidget>
    <class>AdminPage</class>
    <extends>QWidget</extends>
-   <header>adminpage.h</header>
+   <header>AdminPage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>main_page</class>
+   <extends>QWidget</extends>
+   <header>main_page.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

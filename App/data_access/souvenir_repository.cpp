@@ -134,9 +134,30 @@ bool SouvenirRepository::addSouvenir(int stadium_id, const Souvenir& souvenir)
 
 bool SouvenirRepository::updateSouvenir(const Souvenir& souvenir)
 {
-    QSqlDatabase db = _db_manager.getDatabaseObj();
-    if (!db.isValid() || !db.isOpen())
-        return false;
+	QSqlDatabase db = _db_manager.getDatabaseObj();
+	if (!db.isValid() || !db.isOpen())
+		return false;
+
+	QSqlQuery q(db);
+	if (!q.prepare(R"SQL(
+        UPDATE souvenirs
+        SET
+            stadium_id = ?,
+            name = ?,
+            price = ?
+        WHERE souvenir_id = ?;
+    )SQL"))
+		return false;
+
+	q.addBindValue(souvenir.owner_stadium_id);
+	q.addBindValue(souvenir.name);
+	q.addBindValue(souvenir.price);
+	q.addBindValue(souvenir.souvenir_id);
+
+	if (!q.exec())
+		return false;
+
+	return q.numRowsAffected() > 0 || getSouvenirByID(souvenir.souvenir_id).has_value();
 
     QSqlQuery q(db);
     if (!q.prepare(R"SQL(

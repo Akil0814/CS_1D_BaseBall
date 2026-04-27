@@ -29,7 +29,7 @@
    <item>
     <widget class="QStackedWidget" name="AdminPageStack">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="LoginPageStack">
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -77,13 +77,13 @@
   <customwidget>
    <class>LoginPage</class>
    <extends>QWidget</extends>
-   <header>loginpage.h</header>
+   <header>LoginPage.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>DashboardPage</class>
    <extends>QWidget</extends>
-   <header>dashboardpage.h</header>
+   <header>DashboardPage.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
