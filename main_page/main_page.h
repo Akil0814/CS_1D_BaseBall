@@ -18,7 +18,6 @@ Q_OBJECT
 public:
     explicit main_page(QWidget *parent = nullptr);
     ~main_page() override;
-
 private:
     Ui::main_page *ui;
 };
