@@ -24,11 +24,17 @@ public:
     size_t stopCount() const;
     size_t currentStopIndex() const;
 
+    //for trip_planner_cli (testing
+    const TripResult& getResult() const;
+    
+
 private:
     size_t _current_stop_index = 0;
 
     TripResult _all_trip_stop;
     ShoppingCart _cart;
+    //for trip_planner_cli testing
+    TripResult _result;
 };
 
 #endif // TRIP_H

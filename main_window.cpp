@@ -1,7 +1,6 @@
 #include "main_window.h"
 #include "ui_main_window.h"
 #include "browse_window.h"
-#include "adminpage.h"
 #include "main_page.h"
 
 #include <QPushButton>
@@ -31,6 +30,10 @@ MainWindow::MainWindow(QWidget *parent)
             ui->tabWidget->setCurrentWidget(ui->AdminTab);
         });
     }
+    // connect(ui->btnBrowse, &QPushButton::clicked, this, [this]() {
+    //     BrowseWindow *browseWindow = new BrowseWindow(this);
+    //     browseWindow->show();
+    // });
 }
 
 MainWindow::~MainWindow()

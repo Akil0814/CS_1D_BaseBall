@@ -2,11 +2,13 @@
 #include <iostream>
 
 #include "main_window.h"
-#include "AdminPage/adminpage.h"
-#include "AdminPage/dashboardpage.h"
-#include "AdminPage/loginpage.h"
+#include "AdminPage/AdminPage.h"
+#include "AdminPage/DashboardPage.h"
+#include "AdminPage/LoginPage.h"
 #include "App/application.h"
 #include "main_page/main_page.h"
+
+// void test();
 
 int main(int argc, char *argv[])
 {
@@ -19,13 +21,24 @@ int main(int argc, char *argv[])
 
     if (APP->hasWarning())
         std::cout << APP->lastWarning().toStdString() << std::endl;
-
-    if (APP->isAuthAvailable()) {
-        APP->authService()->idVerify("cs1d", "abc");
-    }
-
+         
     MainWindow w;
+    // test();
     w.show();
-
     return a.exec();
 }
+
+// void test(){
+//
+//     // Quick auth check for debug/demo account.
+//     if (APP->isAuthAvailable()){
+//
+//     if (APP->isAuthAvailable()) {
+//         APP->authService()->idVerify("cs1d", "abc");
+//     }
+//
+//     MainWindow w;
+//     w.show();
+//
+//     return a.exec();
+// }

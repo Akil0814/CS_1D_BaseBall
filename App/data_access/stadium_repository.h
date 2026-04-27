@@ -54,6 +54,8 @@ public:
 
     bool teamNameExists(const QString& team_name) const;
 
+    DatabaseManager& getDatabaseManager() const { return _db_manager; }
+
 private:
     Stadium buildStadiumFromQuery(const QSqlQuery& q) const;
 
