@@ -8,6 +8,8 @@
 #include "App/application.h"
 #include "main_page/main_page.h"
 
+// void test();
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -21,22 +23,22 @@ int main(int argc, char *argv[])
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
-    test();
+    // test();
     w.show();
     return a.exec();
 }
 
-void test(){
-
-    // Quick auth check for debug/demo account.
-    if (APP->isAuthAvailable()){
-
-    if (APP->isAuthAvailable()) {
-        APP->authService()->idVerify("cs1d", "abc");
-    }
-
-    MainWindow w;
-    w.show();
-
-    return a.exec();
-}
+// void test(){
+//
+//     // Quick auth check for debug/demo account.
+//     if (APP->isAuthAvailable()){
+//
+//     if (APP->isAuthAvailable()) {
+//         APP->authService()->idVerify("cs1d", "abc");
+//     }
+//
+//     MainWindow w;
+//     w.show();
+//
+//     return a.exec();
+// }

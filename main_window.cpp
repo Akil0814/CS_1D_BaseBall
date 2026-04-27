@@ -1,7 +1,6 @@
 #include "main_window.h"
 #include "ui_main_window.h"
 #include "browse_window.h"
-#include "adminpage.h"
 #include "main_page.h"
 
 #include <QPushButton>

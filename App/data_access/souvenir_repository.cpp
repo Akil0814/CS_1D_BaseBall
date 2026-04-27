@@ -158,27 +158,6 @@ bool SouvenirRepository::updateSouvenir(const Souvenir& souvenir)
 		return false;
 
 	return q.numRowsAffected() > 0 || getSouvenirByID(souvenir.souvenir_id).has_value();
-
-    QSqlQuery q(db);
-    if (!q.prepare(R"SQL(
-        UPDATE souvenirs
-        SET
-            stadium_id = ?,
-            name = ?,
-            price = ?
-        WHERE souvenir_id = ?;
-    )SQL"))
-        return false;
-
-    q.addBindValue(souvenir.owner_stadium_id);
-    q.addBindValue(souvenir.name);
-    q.addBindValue(souvenir.price);
-    q.addBindValue(souvenir.souvenir_id);
-
-    if (!q.exec())
-        return false;
-
-    return q.numRowsAffected() > 0 || getSouvenirByID(souvenir.souvenir_id).has_value();
 }
 
 bool SouvenirRepository::updateSouvenirPrice(int souvenir_id, double new_price)
