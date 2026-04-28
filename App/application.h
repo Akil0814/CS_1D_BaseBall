@@ -55,6 +55,8 @@ public:
     const QString& lastError() const;
     // Return the last recorded warning message.
     const QString& lastWarning() const;
+    // Return the located assets directory, or an empty string if unavailable.
+    const QString& assetsDir() const;
 
     // Erfan Testing
     DatabaseManager* databaseManager();
@@ -77,6 +79,7 @@ private:
     QString _last_error = {};
     QString _last_warning = {};
     QString _data_dir = {};
+    QString _assets_dir = {};
     QString _db_path = {};
     QString _key_path = {};
 

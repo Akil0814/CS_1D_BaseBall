@@ -1,5 +1,6 @@
 #include "main_page.h"
 #include "ui_main_page.h"
+#include "App/application.h"
 
 #include <QPixmap>
 
@@ -17,7 +18,8 @@ main_page::main_page(QWidget *parent)
         );
 
     // show MLB logo
-    QPixmap logo("images/mlb.png");
+    QString path = APP->assetsDir();
+    QPixmap logo(path+"/images/mlb.png");
     ui->lblLogo->setPixmap(
         logo.scaled(420, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation)
         );

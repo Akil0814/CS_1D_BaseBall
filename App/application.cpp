@@ -117,6 +117,7 @@ bool Application::init()
 bool Application::resolvePaths()
 {
     _data_dir.clear();
+    _assets_dir.clear();
     _db_path.clear();
     _key_path.clear();
 
@@ -124,6 +125,13 @@ bool Application::resolvePaths()
 
     for (int i = 0; i < 8; ++i)
     {
+        if (_assets_dir.isEmpty())
+        {
+            const QString assets_candidate = dir.filePath("assets");
+            if (QDir(assets_candidate).exists())
+                _assets_dir = QDir(assets_candidate).absolutePath();
+        }
+
         const QString app_data_candidate = dir.filePath("App/data");
         if (QDir(app_data_candidate).exists())
         {
@@ -142,6 +150,9 @@ bool Application::resolvePaths()
             break;
     }
 
+    if (_assets_dir.isEmpty())
+        _last_warning = "assets directory not found";
+
     if (_data_dir.isEmpty())
     {
         _last_error = "failed to locate data directory";
@@ -154,7 +165,10 @@ bool Application::resolvePaths()
     if (QFileInfo::exists(candidate_key_path))
         _key_path = candidate_key_path;
     else
-        _last_warning = "AuthService key file not found: " + candidate_key_path;
+        MessageUtils::appendMessage(
+            _last_warning,
+            "AuthService key file not found: " + candidate_key_path
+        );
 
     return true;
 }
@@ -172,6 +186,11 @@ const QString& Application::lastError() const
 const QString& Application::lastWarning() const
 {
     return _last_warning;
+}
+
+const QString& Application::assetsDir() const
+{
+    return _assets_dir;
 }
 
 bool Application::hasError() const

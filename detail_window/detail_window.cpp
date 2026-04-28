@@ -90,7 +90,8 @@ void DetailWindow::loadSouvenirs()
 }
 void DetailWindow::loadStadiumImage()
 {
-    QString imagePath = "images/stadiums/" + QString::number(currentStadium.stadium_id) + ".jpg";
+    QString assetsPath = APP->assetsDir()+ "/images/stadiums/";
+    QString imagePath = assetsPath + QString::number(currentStadium.stadium_id) + ".jpg";
 
     QPixmap pix;
 
