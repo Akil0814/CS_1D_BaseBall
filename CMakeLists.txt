@@ -48,6 +48,8 @@ if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        tour_shop_window.h tour_shop_window.cpp tour_shop_window.ui
+        mapwindow.h mapwindow.cpp mapwindow.ui
 
     )
 else()
