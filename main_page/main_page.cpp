@@ -11,11 +11,11 @@ main_page::main_page(QWidget *parent)
     ui->setupUi(this);
 
     // dark navy background
-    ui->mainContainer->setStyleSheet(
-        "QWidget#mainContainer {"
-        "background-color: #0A2A66;"
-        "}"
-        );
+    // ui->mainContainer->setStyleSheet(
+    //     "QWidget#mainContainer {"
+    //     "background-color: #0A2A66;"
+    //     "}"
+    //     );
 
     // show MLB logo
     QString path = APP->assetsDir();

@@ -30,10 +30,12 @@ MainWindow::MainWindow(QWidget *parent)
             ui->tabWidget->setCurrentWidget(ui->AdminTab);
         });
     }
-    // connect(ui->btnBrowse, &QPushButton::clicked, this, [this]() {
-    //     BrowseWindow *browseWindow = new BrowseWindow(this);
-    //     browseWindow->show();
-    // });
+
+    ui->tabWidget->setStyleSheet(
+    "QWidget#MLB {"
+        "background-color: #0A2A66;"
+        "}"
+    );
 }
 
 MainWindow::~MainWindow()
