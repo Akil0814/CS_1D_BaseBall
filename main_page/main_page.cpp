@@ -1,8 +1,10 @@
 #include "main_page.h"
 #include "ui_main_page.h"
 #include "App/application.h"
+#include "tour_shop_window.h"
 
 #include <QPixmap>
+#include <QPushButton>
 
 main_page::main_page(QWidget *parent)
     : QWidget(parent)
@@ -19,11 +21,16 @@ main_page::main_page(QWidget *parent)
 
     // show MLB logo
     QString path = APP->assetsDir();
-    QPixmap logo(path+"/images/mlb.png");
+    QPixmap logo(path + "/images/mlb.png");
     ui->lblLogo->setPixmap(
         logo.scaled(420, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation)
         );
     ui->lblLogo->setAlignment(Qt::AlignCenter);
+
+    connect(ui->btnTourShop, &QPushButton::clicked, this, [this]() {
+        TourShopWindow *tourShopWindow = new TourShopWindow(this);
+        tourShopWindow->show();
+    });
 }
 
 main_page::~main_page()
