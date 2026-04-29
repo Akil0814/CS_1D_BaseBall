@@ -3,6 +3,7 @@
 #include "shopping_cart.h"
 #include "../../data_types.h"
 
+
 class Trip
 {
 public:
@@ -33,8 +34,6 @@ private:
 
     TripResult _all_trip_stop;
     ShoppingCart _cart;
-    //for trip_planner_cli testing
-    TripResult _result;
 };
 
 #endif // TRIP_H
