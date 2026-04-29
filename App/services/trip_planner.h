@@ -72,6 +72,7 @@ public:
     bool generateDFSResultFrom(int start_stadium_id);
     bool generateBFSResultFrom(int start_stadium_id);
     [[nodiscard]] std::vector<int> getAllStadiumIds() const;
+    std::vector<int> getNeighbors(int id);
 
 private:
     double getDistance(int from_id, int to_id) const;

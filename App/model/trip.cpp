@@ -1,8 +1,8 @@
 #include "trip.h"
 
 Trip::Trip(TripResult result)
-    : _all_trip_stop(std::move(result)),
-    _current_stop_index(0){}
+    : _all_trip_stop(result)
+{}
 
 Trip::~Trip() = default;
 
@@ -94,7 +94,6 @@ size_t Trip::currentStopIndex() const
 }
 
 //for trip_planner_cli (testing
-const TripResult& Trip::getResult() const
-{
-    return _result;
+const TripResult& Trip::getResult() const {
+    return _all_trip_stop;
 }

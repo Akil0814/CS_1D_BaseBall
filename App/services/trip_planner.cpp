@@ -1,5 +1,4 @@
 #include "trip_planner.h"
-
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QVariant>
@@ -10,6 +9,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <functional>
+#include <QSqlError>
 
 // =====================================================
 // Constructor
@@ -31,14 +31,48 @@ Trip* TripPlanner::getCurrentTrip() const
 // =====================================================
 // REAL distance lookup (DB-based)
 // =====================================================
+// double TripPlanner::getDistance(int from_id, int to_id) const
+// {
+//     if (from_id == to_id)
+//         return 0.0;
+//
+//     QSqlDatabase db = _repo.getDatabaseManager().getDatabaseObj();
+//     if (!db.isOpen())
+//         return std::numeric_limits<double>::max();
+//
+//     int a = std::min(from_id, to_id);
+//     int b = std::max(from_id, to_id);
+//
+//     QSqlQuery q(db);
+//     q.prepare(R"(
+//         SELECT distance_miles
+//         FROM stadium_distances
+//         WHERE stadium_a_id = ? AND stadium_b_id = ?
+//     )");
+//
+//     q.addBindValue(a);
+//     q.addBindValue(b);
+//
+//     if (!q.exec())
+//         return std::numeric_limits<double>::max();
+//
+//     if (q.next())
+//         return q.value(0).toDouble();
+//
+//     return std::numeric_limits<double>::max();
+// }
 double TripPlanner::getDistance(int from_id, int to_id) const
 {
     if (from_id == to_id)
         return 0.0;
 
     QSqlDatabase db = _repo.getDatabaseManager().getDatabaseObj();
+
     if (!db.isOpen())
+    {
+        qDebug() << "DB NOT OPEN";
         return std::numeric_limits<double>::max();
+    }
 
     int a = std::min(from_id, to_id);
     int b = std::max(from_id, to_id);
@@ -54,11 +88,19 @@ double TripPlanner::getDistance(int from_id, int to_id) const
     q.addBindValue(b);
 
     if (!q.exec())
+    {
+        qDebug() << "QUERY FAILED:" << q.lastError();
         return std::numeric_limits<double>::max();
+    }
 
     if (q.next())
-        return q.value(0).toDouble();
+    {
+        double d = q.value(0).toDouble();
+        qDebug() << "DIST:" << a << "->" << b << "=" << d;
+        return d;
+    }
 
+    qDebug() << "NO RESULT FOR:" << a << b;
     return std::numeric_limits<double>::max();
 }
 
@@ -224,7 +266,7 @@ bool TripPlanner::planShortestTripToTarget(int start_id, int target_id)
         if (current == target_id)
             break;
 
-        for (int neighbor : all_ids)
+        for (int neighbor : getNeighbors(current))
         {
             if (neighbor == current)
                 continue;
@@ -304,7 +346,10 @@ bool TripPlanner::planVisitAllByNearestFrom(int start_id)
         }
 
         if (best == -1)
-            return false;
+        {
+            qDebug() << "WARNING: No reachable next stadium from" << current;
+            break; // instead of failing
+        }
 
         route.push_back(best);
         remaining.erase(best);
@@ -395,8 +440,6 @@ bool TripPlanner::generateMSTResult()
 
 bool TripPlanner::generateDFSResultFrom(int start_id)
 {
-    auto all_ids = getAllStadiumIds();
-
     std::unordered_set<int> visited;
     std::vector<int> order;
     std::stack<int> st;
@@ -414,7 +457,7 @@ bool TripPlanner::generateDFSResultFrom(int start_id)
         visited.insert(current);
         order.push_back(current);
 
-        for (int neighbor : all_ids)
+        for (int neighbor : getNeighbors(current))
         {
             if (!visited.count(neighbor))
                 st.push(neighbor);
@@ -422,11 +465,22 @@ bool TripPlanner::generateDFSResultFrom(int start_id)
     }
 
     TripResult result;
+    double total = 0.0;
 
-    for (int id : order)
-        result.stadiums.push_back(getStadiumById(id));
+    for (size_t i = 0; i < order.size(); i++)
+    {
+        result.stadiums.push_back(getStadiumById(order[i]));
 
-    result.total_distance = 0.0;
+        if (i > 0)
+        {
+            double d = getDistance(order[i - 1], order[i]);
+
+            if (d != std::numeric_limits<double>::max())
+                total += d;
+        }
+    }
+
+    result.total_distance = total;
     result.total_cost = 0.0;
 
     _current_trip = std::make_unique<Trip>(result);
@@ -435,11 +489,8 @@ bool TripPlanner::generateDFSResultFrom(int start_id)
 
 bool TripPlanner::generateBFSResultFrom(int start_id)
 {
-    auto all_ids = getAllStadiumIds();
-
     std::unordered_set<int> visited;
     std::queue<int> q;
-
     std::vector<int> order;
 
     q.push(start_id);
@@ -452,7 +503,7 @@ bool TripPlanner::generateBFSResultFrom(int start_id)
 
         order.push_back(current);
 
-        for (int neighbor : all_ids)
+        for (int neighbor : getNeighbors(current))
         {
             if (!visited.count(neighbor))
             {
@@ -463,13 +514,58 @@ bool TripPlanner::generateBFSResultFrom(int start_id)
     }
 
     TripResult result;
+    double total = 0.0;
 
-    for (int id : order)
-        result.stadiums.push_back(getStadiumById(id));
+    for (size_t i = 0; i < order.size(); i++)
+    {
+        result.stadiums.push_back(getStadiumById(order[i]));
 
-    result.total_distance = 0.0;
+        if (i > 0)
+        {
+            double d = getDistance(order[i - 1], order[i]);
+
+            if (d != std::numeric_limits<double>::max())
+                total += d;
+        }
+    }
+
+    result.total_distance = total;
     result.total_cost = 0.0;
 
     _current_trip = std::make_unique<Trip>(result);
     return true;
+}
+
+
+std::vector<int> TripPlanner::getNeighbors(int id)
+{
+    std::vector<int> neighbors;
+
+    QSqlDatabase db = _repo.getDatabaseManager().getDatabaseObj();
+    QSqlQuery q(db);
+
+    q.prepare(R"(
+        SELECT stadium_a_id, stadium_b_id
+        FROM stadium_distances
+        WHERE stadium_a_id = ? OR stadium_b_id = ?
+    )");
+
+    q.addBindValue(id);
+    q.addBindValue(id);
+
+    if (q.exec())
+    {
+        while (q.next())
+        {
+            int a = q.value(0).toInt();
+            int b = q.value(1).toInt();
+
+            if (a == id)
+                neighbors.push_back(b);
+            else
+                neighbors.push_back(a);
+        }
+    }
+
+    return neighbors;
 }
