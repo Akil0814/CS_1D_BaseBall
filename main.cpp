@@ -8,7 +8,7 @@
 #include "App/application.h"
 #include "main_page/main_page.h"
 
-// void test();
+//void test();
 
 int main(int argc, char *argv[])
 {
@@ -23,22 +23,32 @@ int main(int argc, char *argv[])
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
-    // test();
+    //test();
+
+    // Uncomment to rebuild the database.
+    // The existing database will be automatically backed up as a .bak file before reset.
+    //APP->databaseManager()->resetDatabase();
+
     w.show();
     return a.exec();
 }
 
-// void test(){
-//
-//     // Quick auth check for debug/demo account.
-//     if (APP->isAuthAvailable()){
-//
-//     if (APP->isAuthAvailable()) {
-//         APP->authService()->idVerify("cs1d", "abc");
-//     }
-//
-//     MainWindow w;
-//     w.show();
-//
-//     return a.exec();
-// }
+ void test()
+{
+     // Use a full local path.
+     QString path1 = "W:/Coding/vCS_1D_BaseBall/assets/MLB_Information_Expansion.csv";
+     QString path2 = "W:/Coding/vCS_1D_BaseBall/assets/Distance_between_new_team.csv";
+
+     // Expect a full local file path here.
+     if (!APP->databaseManager()->importStadiumsFromFile(path1))
+     {
+         std::cerr << APP->databaseManager()->lastError().toStdString() << std::endl;
+         std::cerr << APP->databaseManager()->lastWarning().toStdString() << std::endl;
+     }
+
+     if (!APP->databaseManager()->importDistancesFromFile(path2))
+     {
+         std::cerr << APP->databaseManager()->lastError().toStdString() << std::endl;
+         std::cerr << APP->databaseManager()->lastWarning().toStdString() << std::endl;
+     }
+}

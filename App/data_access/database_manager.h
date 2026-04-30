@@ -18,6 +18,9 @@ public:
     // Rebuild the database from scratch with optional backup cleanup.
     [[nodiscard]] bool resetDatabase(bool remove_backup_if_success = false);
 
+    [[nodiscard]] bool importStadiumsFromFile(const QString& filePath);
+    [[nodiscard]] bool importDistancesFromFile(const QString& filePath);
+
     // Return whether the database connection is currently open.
     [[nodiscard]] bool isOpen() const;
 
@@ -62,6 +65,7 @@ private:
     bool init_schema();
     bool seed_if_empty();
     
+    bool upsert_default_souvenirs_for_stadium_ids(QSqlDatabase& db, const QVector<int>& stadium_ids);
     bool upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db);
 
     bool import_stadium_from_csv_files(const QString& stadium_csv);
