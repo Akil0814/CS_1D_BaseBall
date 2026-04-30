@@ -167,23 +167,13 @@ bool AuthService::idVerify(std::string i_user_name, std::string i_password)
         return false;
     }
 
-
     const std::string u_enc_input = xor_copy(i_user_name, key);
 
     const std::string p_enc_input = xor_copy(i_password, key);
 
-    std::cout << "u_enc_input : " << bytes_to_hex(u_enc_input) << std::endl;
-    std::cout << "u_enc_stored: " << bytes_to_hex(u_enc_stored) << std::endl;
-    std::cout << "p_enc_input : " << bytes_to_hex(p_enc_input) << std::endl;
-    std::cout << "p_enc_stored: " << bytes_to_hex(p_enc_stored) << std::endl;
-
     const bool user_ok = (u_enc_input == u_enc_stored);
     const bool pass_ok = (p_enc_input == p_enc_stored);
     const bool verify_ok = user_ok && pass_ok;
-
-    std::cout << "user_ok=" << user_ok
-        << ", pass_ok=" << pass_ok
-        << ", verify_ok=" << verify_ok << std::endl;
 
     return verify_ok;
 }

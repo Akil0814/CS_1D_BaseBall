@@ -33,6 +33,11 @@ const QVector<DefaultSouvenir> k_default_souvenirs =
     { "Team jersey", 199.99 }
 };
 
+QString normalizeIdentityValue(const QString& value)
+{
+    return CsvUtils::normalizeStadiumNameKey(value);
+}
+
 }
 
 //-------------------------------------public--------------------------------------
@@ -246,6 +251,175 @@ QSqlDatabase DatabaseManager::getDatabaseObj()
     return db;
 }
 
+bool DatabaseManager::importStadiumsFromFile(const QString& filePath)
+{
+    _last_error.clear();
+    _last_warning.clear();
+
+    QStringList warnings;
+
+    if (!_schema_stadiums_ready)
+    {
+        _last_error = "Stadium table is unavailable; cannot import stadium data.";
+        return false;
+    }
+
+    QSqlDatabase db = QSqlDatabase::database(_conn_name, false);
+    if (!db.isValid() || !db.isOpen())
+    {
+        _last_error = "Database is not open.";
+        return false;
+    }
+
+    QSet<QString> existing_team_keys;
+    QSet<QString> existing_stadium_name_keys;
+    {
+        QSqlQuery stadium_q(db);
+        if (!stadium_q.exec("SELECT team_name, stadium_name FROM stadiums;"))
+        {
+            _last_error = "load stadium snapshot for import failed: " + stadium_q.lastError().text();
+            return false;
+        }
+
+        while (stadium_q.next())
+        {
+            existing_team_keys.insert(normalizeIdentityValue(stadium_q.value(0).toString()));
+            existing_stadium_name_keys.insert(normalizeIdentityValue(stadium_q.value(1).toString()));
+        }
+    }
+
+    if (!import_stadium_from_csv_files(filePath))
+        return false;
+
+    _data_stadiums_ready = true;
+
+    if (!_schema_souvenirs_ready)
+        return true;
+
+    CsvUtils::Table csv;
+    QString csv_error;
+    if (!CsvUtils::readTable(filePath, csv, csv_error))
+    {
+        MessageUtils::appendUniqueMessage(
+            warnings,
+            "stadium import completed but default souvenir backfill could not read csv: " + csv_error);
+        _last_warning = MessageUtils::joinMessages(warnings);
+        return true;
+    }
+
+    const QHash<QString, int> header_index = CsvUtils::buildHeaderIndex(csv.header);
+    const int team_idx = CsvUtils::findHeaderIndex(header_index, { "team_name", "team" });
+    const int stadium_idx = CsvUtils::findHeaderIndex(header_index, { "stadium_name", "stadium" });
+
+    if (team_idx < 0 || stadium_idx < 0)
+    {
+        MessageUtils::appendUniqueMessage(
+            warnings,
+            "stadium import completed but default souvenir backfill skipped: csv header missing team/stadium columns.");
+        _last_warning = MessageUtils::joinMessages(warnings);
+        return true;
+    }
+
+    QVector<int> new_stadium_ids;
+    QSet<int> seen_new_stadium_ids;
+
+    for (const QStringList& row : csv.rows)
+    {
+        const QString team_name = CsvUtils::cellAt(row, team_idx).trimmed();
+        const QString stadium_name = CsvUtils::cellAt(row, stadium_idx).trimmed();
+
+        if (team_name.isEmpty() || stadium_name.isEmpty())
+            continue;
+
+        const QString team_key = normalizeIdentityValue(team_name);
+        const QString stadium_key = normalizeIdentityValue(stadium_name);
+
+        if (existing_team_keys.contains(team_key) || existing_stadium_name_keys.contains(stadium_key))
+            continue;
+
+        QSqlQuery lookup_q(db);
+        lookup_q.prepare(R"SQL(
+            SELECT stadium_id
+            FROM stadiums
+            WHERE team_name = ? OR stadium_name = ?
+            ORDER BY stadium_id ASC
+            LIMIT 1;
+        )SQL");
+        lookup_q.addBindValue(team_name);
+        lookup_q.addBindValue(stadium_name);
+
+        if (!lookup_q.exec())
+        {
+            MessageUtils::appendUniqueMessage(
+                warnings,
+                "stadium import completed but failed to resolve new stadium id for souvenir backfill: "
+                + lookup_q.lastError().text());
+            continue;
+        }
+
+        if (!lookup_q.next())
+            continue;
+
+        const int stadium_id = lookup_q.value(0).toInt();
+        if (stadium_id <= 0 || seen_new_stadium_ids.contains(stadium_id))
+            continue;
+
+        seen_new_stadium_ids.insert(stadium_id);
+        new_stadium_ids.push_back(stadium_id);
+    }
+
+    if (new_stadium_ids.isEmpty())
+    {
+        _data_souvenirs_ready = true;
+        return true;
+    }
+
+    if (!upsert_default_souvenirs_for_stadium_ids(db, new_stadium_ids))
+    {
+        MessageUtils::appendUniqueMessage(
+            warnings,
+            "stadium import completed but default souvenir backfill failed: " + _last_error);
+        _last_warning = MessageUtils::joinMessages(warnings);
+        _last_error.clear();
+        return true;
+    }
+
+    _last_warning = MessageUtils::joinMessages(warnings);
+    _data_souvenirs_ready = true;
+    return true;
+}
+
+bool DatabaseManager::importDistancesFromFile(const QString& filePath)
+{
+    _last_error.clear();
+    _last_warning.clear();
+
+    if (!_schema_stadiums_ready || !_data_stadiums_ready)
+    {
+        _last_error = "Stadium data is unavailable; cannot import distance data.";
+        return false;
+    }
+
+    if (!_schema_distances_ready)
+    {
+        _last_error = "Distance table is unavailable; cannot import distance data.";
+        return false;
+    }
+
+    QSqlDatabase db = QSqlDatabase::database(_conn_name, false);
+    if (!db.isValid() || !db.isOpen())
+    {
+        _last_error = "Database is not open.";
+        return false;
+    }
+
+    if (!import_distances_csv_file(filePath))
+        return false;
+
+    _data_distances_ready = true;
+    return true;
+}
+
 //-------------------------------------private--------------------------------------
 
 bool DatabaseManager::init_impl(bool allow_auto_recover)
@@ -302,8 +476,6 @@ bool DatabaseManager::init_impl(bool allow_auto_recover)
 
 bool DatabaseManager::open_db()
 {
-    std::cout << "1-Start.Opening the database" << std::endl;//testing
-
     _last_error.clear();
     _last_warning.clear();
 
@@ -327,15 +499,12 @@ bool DatabaseManager::open_db()
     }
 
     std::cout << " " << _db_path.toStdString() << std::endl;
-    std::cout << "1-Finish.Opening the database" << std::endl;//testing
 
     return true;
 }
 
 bool DatabaseManager::init_pragmas()
 {
-    std::cout << "2-Start Configuring runtime parameters" << std::endl;//testing
-
     _last_error.clear();
     _last_warning.clear();
 
@@ -376,15 +545,11 @@ bool DatabaseManager::init_pragmas()
     if (!exec_sql("PRAGMA temp_store = MEMORY;"))
         return false;
 
-    std::cout << "2-Finish Configuring runtime parameters" << std::endl;//testing
-
     return true;
 }
 
 bool DatabaseManager::init_schema()
 {
-    std::cout << "3-Start Building the table structure" << std::endl;//testing
-
     _last_error.clear();
     _last_warning.clear();
 
@@ -530,15 +695,11 @@ bool DatabaseManager::init_schema()
 
     _last_warning = MessageUtils::joinMessages(warnings);
 
-    std::cout << "3-Finish Building the table structure" << std::endl;//testing
-
     return true;
 }
 
 bool DatabaseManager::seed_if_empty()
 {
-    std::cout << "4-Start Loading data" << std::endl;//testing
-
     const QString inherited_warning = _last_warning.trimmed();
 
     _last_error.clear();
@@ -659,13 +820,12 @@ bool DatabaseManager::seed_if_empty()
         MessageUtils::appendUniqueMessage(merged_warnings, warning);
     _last_warning = MessageUtils::joinMessages(merged_warnings);
 
-    std::cout << "4-Finish Loading data" << std::endl;//testing
-
     return _schema_stadiums_ready && _data_stadiums_ready;
 }
 
 bool DatabaseManager::upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db)
 {
+    QVector<int> stadium_ids;
     QSqlQuery stadium_q(db);
     if (!stadium_q.exec("SELECT stadium_id FROM stadiums;"))
     {
@@ -676,10 +836,14 @@ bool DatabaseManager::upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db
         return false;
     }
 
-    QVector<int> stadium_ids;
     while (stadium_q.next())
         stadium_ids.push_back(stadium_q.value(0).toInt());
 
+    return upsert_default_souvenirs_for_stadium_ids(db, stadium_ids);
+}
+
+bool DatabaseManager::upsert_default_souvenirs_for_stadium_ids(QSqlDatabase& db, const QVector<int>& stadium_ids)
+{
     if (stadium_ids.isEmpty())
         return true;
 
@@ -689,6 +853,7 @@ bool DatabaseManager::upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db
         return false;
     }
 
+    QSet<int> unique_ids;
     QSqlQuery upsert_q(db);
     upsert_q.prepare(R"SQL(
         INSERT INTO souvenirs(stadium_id, name, price)
@@ -698,6 +863,11 @@ bool DatabaseManager::upsert_default_souvenirs_for_all_stadiums(QSqlDatabase& db
 
     for (const int stadium_id : stadium_ids)
     {
+        if (stadium_id <= 0 || unique_ids.contains(stadium_id))
+            continue;
+
+        unique_ids.insert(stadium_id);
+
         for (const DefaultSouvenir& item : k_default_souvenirs)
         {
             upsert_q.bindValue(0, stadium_id);

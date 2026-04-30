@@ -8,7 +8,7 @@
 #include "App/application.h"
 #include "main_page/main_page.h"
 
-// void test();
+void test();
 
 int main(int argc, char *argv[])
 {
@@ -23,22 +23,20 @@ int main(int argc, char *argv[])
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
-    // test();
+    test();
     w.show();
     return a.exec();
 }
 
-// void test(){
-//
-//     // Quick auth check for debug/demo account.
-//     if (APP->isAuthAvailable()){
-//
-//     if (APP->isAuthAvailable()) {
-//         APP->authService()->idVerify("cs1d", "abc");
-//     }
-//
-//     MainWindow w;
-//     w.show();
-//
-//     return a.exec();
-// }
+ void test()
+{
+     QString path1 = "";
+     QString path2 = "";
+     if (!APP->databaseManager()->importStadiumsFromFile(path1))
+         std::cerr << "false 1" << std::endl;
+     if(!APP->databaseManager()->importDistancesFromFile(path2))
+        std::cerr << "false 2" << std::endl;
+
+     if (APP->hasWarning())
+         std::cout << APP->lastWarning().toStdString() << std::endl;
+}
