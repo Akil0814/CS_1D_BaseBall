@@ -77,6 +77,8 @@ out/
 *.db
 *.db-shm
 *.db-wal
+# Database backup
+*.bak
 
 # Doxygen Folders
 html

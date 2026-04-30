@@ -257,10 +257,21 @@ bool DatabaseManager::importStadiumsFromFile(const QString& filePath)
     _last_warning.clear();
 
     QStringList warnings;
+    const QString import_target = QFileInfo(filePath).fileName().trimmed().isEmpty()
+        ? filePath
+        : QFileInfo(filePath).fileName();
+    auto set_failure_warning = [&](const QString& message)
+        {
+            QStringList failure_warnings;
+            MessageUtils::appendUniqueMessage(failure_warnings, message);
+            MessageUtils::appendUniqueMessage(failure_warnings, _last_warning);
+            _last_warning = MessageUtils::joinMessages(failure_warnings);
+        };
 
     if (!_schema_stadiums_ready)
     {
         _last_error = "Stadium table is unavailable; cannot import stadium data.";
+        set_failure_warning("stadium import failed for file: " + import_target);
         return false;
     }
 
@@ -268,6 +279,7 @@ bool DatabaseManager::importStadiumsFromFile(const QString& filePath)
     if (!db.isValid() || !db.isOpen())
     {
         _last_error = "Database is not open.";
+        set_failure_warning("stadium import failed for file: " + import_target);
         return false;
     }
 
@@ -278,6 +290,7 @@ bool DatabaseManager::importStadiumsFromFile(const QString& filePath)
         if (!stadium_q.exec("SELECT team_name, stadium_name FROM stadiums;"))
         {
             _last_error = "load stadium snapshot for import failed: " + stadium_q.lastError().text();
+            set_failure_warning("stadium import failed for file: " + import_target);
             return false;
         }
 
@@ -289,7 +302,10 @@ bool DatabaseManager::importStadiumsFromFile(const QString& filePath)
     }
 
     if (!import_stadium_from_csv_files(filePath))
+    {
+        set_failure_warning("stadium import failed for file: " + import_target);
         return false;
+    }
 
     _data_stadiums_ready = true;
 
@@ -394,15 +410,28 @@ bool DatabaseManager::importDistancesFromFile(const QString& filePath)
     _last_error.clear();
     _last_warning.clear();
 
+    const QString import_target = QFileInfo(filePath).fileName().trimmed().isEmpty()
+        ? filePath
+        : QFileInfo(filePath).fileName();
+    auto set_failure_warning = [&](const QString& message)
+        {
+            QStringList failure_warnings;
+            MessageUtils::appendUniqueMessage(failure_warnings, message);
+            MessageUtils::appendUniqueMessage(failure_warnings, _last_warning);
+            _last_warning = MessageUtils::joinMessages(failure_warnings);
+        };
+
     if (!_schema_stadiums_ready || !_data_stadiums_ready)
     {
         _last_error = "Stadium data is unavailable; cannot import distance data.";
+        set_failure_warning("distance import failed for file: " + import_target);
         return false;
     }
 
     if (!_schema_distances_ready)
     {
         _last_error = "Distance table is unavailable; cannot import distance data.";
+        set_failure_warning("distance import failed for file: " + import_target);
         return false;
     }
 
@@ -410,11 +439,15 @@ bool DatabaseManager::importDistancesFromFile(const QString& filePath)
     if (!db.isValid() || !db.isOpen())
     {
         _last_error = "Database is not open.";
+        set_failure_warning("distance import failed for file: " + import_target);
         return false;
     }
 
     if (!import_distances_csv_file(filePath))
+    {
+        set_failure_warning("distance import failed for file: " + import_target);
         return false;
+    }
 
     _data_distances_ready = true;
     return true;
@@ -767,6 +800,8 @@ bool DatabaseManager::seed_if_empty()
     const QString stadium_csv = QDir(data_dir).filePath("MLB Information.csv");
     const QString distances_csv = QDir(data_dir).filePath("Distance between stadiums.csv");
 
+    const bool is_initial_stadium_seed = (stadium_count == 0);
+
     // seed stadiums if empty
     if (stadium_count == 0)
     {
@@ -779,14 +814,18 @@ bool DatabaseManager::seed_if_empty()
     }
     _data_stadiums_ready = true;
 
-    // seed souvenirs
     if (_schema_souvenirs_ready)
     {
-        if (!upsert_default_souvenirs_for_all_stadiums(db))
+        if (is_initial_stadium_seed)
         {
-            MessageUtils::appendUniqueMessage(warnings, "souvenir data degraded: " + _last_error);
-            _last_error.clear();
-            _data_souvenirs_ready = false;
+            if (!upsert_default_souvenirs_for_all_stadiums(db))
+            {
+                MessageUtils::appendUniqueMessage(warnings, "souvenir data degraded: " + _last_error);
+                _last_error.clear();
+                _data_souvenirs_ready = false;
+            }
+            else
+                _data_souvenirs_ready = true;
         }
         else
             _data_souvenirs_ready = true;
