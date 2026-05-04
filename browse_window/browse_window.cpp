@@ -59,10 +59,10 @@ BrowseWindow::~BrowseWindow()
 
 void BrowseWindow::setupTable()
 {
-    ui->tblBrowse->setColumnCount(4);
+    ui->tblBrowse->setColumnCount(5);
 
     QStringList headers;
-    headers << "Team Name" << "Stadium Name" << "League" << "Location";
+    headers << "Team Name" << "Stadium Name" << "League" << "Location" << "Seat Capacity";
     ui->tblBrowse->setHorizontalHeaderLabels(headers);
 
     ui->tblBrowse->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -134,9 +134,9 @@ void BrowseWindow::loadBrowseTable()
 
     QStringList headers;
     if (ui->cmbBrowseBy->currentText() == "Stadium")
-        headers << "Stadium Name" << "Team Name" << "League" << "Location";
+        headers << "Stadium Name" << "Team Name" << "League" << "Location" << "Seat Capacity";
     else
-        headers << "Team Name" << "Stadium Name" << "League" << "Location";
+        headers << "Team Name" << "Stadium Name" << "League" << "Location" << "Seat Capacity";
 
     ui->tblBrowse->setHorizontalHeaderLabels(headers);
     ui->tblBrowse->setRowCount(static_cast<int>(stadiums.size()));
@@ -163,6 +163,7 @@ void BrowseWindow::loadBrowseTable()
         ui->tblBrowse->setItem(row, 1, new QTableWidgetItem(secondColumnText));
         ui->tblBrowse->setItem(row, 2, new QTableWidgetItem(s.league));
         ui->tblBrowse->setItem(row, 3, new QTableWidgetItem(s.location));
+        ui->tblBrowse->setItem(row, 4, new QTableWidgetItem(QString::number(s.seating_capacity)));
     }
 
     if (!stadiums.empty())
