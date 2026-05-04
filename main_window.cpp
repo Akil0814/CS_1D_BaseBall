@@ -1,4 +1,5 @@
 #include "main_window.h"
+#include "App/application.h"
 #include "ui_main_window.h"
 #include "browse_window.h"
 #include "main_page.h"
@@ -41,4 +42,17 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_actionreset_triggered()
+{
+  bool success = APP->databaseManager()->resetDatabase();
+
+  if(success) {
+    qDebug() << "Database reset";
+  }
+  else
+  {
+    qDebug() << "Database failed to reset";
+  }
 }

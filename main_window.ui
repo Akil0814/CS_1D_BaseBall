@@ -77,23 +77,29 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>18</height>
+     <height>39</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuReset_DB">
+    <property name="title">
+     <string>Reset DB</string>
+    </property>
+    <addaction name="actionreset"/>
+   </widget>
+   <addaction name="menuReset_DB"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionreset">
+   <property name="text">
+    <string>reset</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
    <class>AdminPage</class>
    <extends>QWidget</extends>
    <header>AdminPage.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>main_page</class>
-   <extends>QWidget</extends>
-   <header>main_page.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
