@@ -20,8 +20,10 @@ DashboardPage::DashboardPage(QWidget *parent) :
 
     const QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
 
-    linkStadiumDB(db);
-    linkSouvenirDB(db);
+    refreshConnections();
+
+    connect(APP->databaseManager(), &DatabaseManager::databaseReset,
+            this, &DashboardPage::refreshConnections);
 }
 
 DashboardPage::~DashboardPage() {
@@ -199,4 +201,21 @@ void DashboardPage::on_removeSouvenirButton_clicked()
     souvenirModel->select();
 }
 
+void DashboardPage::refreshConnections() {
+    // Get the NEW database handle after the reset
+    const QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
 
+    // Delete old models if they exist to avoid holding dead connections
+    if (stadiumModel) {
+        stadiumModel->deleteLater();
+        stadiumModel = nullptr;
+    }
+    if (souvenirModel) {
+        souvenirModel->deleteLater();
+        souvenirModel = nullptr;
+    }
+
+    // Re-link with the fresh DB handle
+    linkStadiumDB(db);
+    linkSouvenirDB(db);
+}
