@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TripDetailPage</class>
+ <widget class="QWidget" name="TripDetailPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1056</width>
+    <height>686</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Trip Detail Page</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>16</number>
+   </property>
+   <property name="leftMargin">
+    <number>16</number>
+   </property>
+   <property name="topMargin">
+    <number>16</number>
+   </property>
+   <property name="rightMargin">
+    <number>16</number>
+   </property>
+   <property name="bottomMargin">
+    <number>16</number>
+   </property>
+   <item>
+    <layout class="QHBoxLayout" name="headerLayout">
+     <item>
+      <layout class="QVBoxLayout" name="titleLayout">
+       <item>
+        <widget class="QLabel" name="lblPageTitle">
+         <property name="font">
+          <font>
+           <pointsize>20</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Trip Details</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="lblTripProgress">
+         <property name="text">
+          <string>Stop 1 of 0</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnViewCart">
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>View Cart</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnEndTrip">
+       <property name="minimumSize">
+        <size>
+         <width>120</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>End Trip</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="contentLayout">
+     <property name="spacing">
+      <number>16</number>
+     </property>
+     <item>
+      <widget class="QGroupBox" name="grpTripStops">
+       <property name="minimumSize">
+        <size>
+         <width>250</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="title">
+        <string>Trip Stops</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QListWidget" name="lstTripStops"/>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="stopNavigationLayout">
+          <item>
+           <widget class="QPushButton" name="btnPreviousStop">
+            <property name="text">
+             <string>Previous Stop</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnNextStop">
+            <property name="text">
+             <string>Next Stop</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="detailLayout">
+       <property name="spacing">
+        <number>16</number>
+       </property>
+       <item>
+        <widget class="QGroupBox" name="grpStadiumDetail">
+         <property name="title">
+          <string>Selected Stadium</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <widget class="QLabel" name="lblSelectedStadium">
+              <property name="font">
+               <font>
+                <pointsize>16</pointsize>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Stadium Name</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QFormLayout" name="formLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="labelTeamName">
+                <property name="text">
+                 <string>Team Name:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="lblTeamNameValue">
+                <property name="text">
+                 <string>N/A</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="labelLeague">
+                <property name="text">
+                 <string>League:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="lblLeagueValue">
+                <property name="text">
+                 <string>N/A</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="labelLocation">
+                <property name="text">
+                 <string>Location:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLabel" name="lblLocationValue">
+                <property name="text">
+                 <string>N/A</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QPushButton" name="btnMoreInfo">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>32</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>More Info</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="lblStadiumImage">
+            <property name="minimumSize">
+             <size>
+              <width>280</width>
+              <height>180</height>
+             </size>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::Box</enum>
+            </property>
+            <property name="text">
+             <string>Stadium Image</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="grpSouvenirs">
+         <property name="title">
+          <string>Souvenirs</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QTableWidget" name="tblSouvenirs">
+            <property name="columnCount">
+             <number>2</number>
+            </property>
+            <column>
+             <property name="text">
+              <string>Souvenir</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Price</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="souvenirActionLayout">
+            <item>
+             <widget class="QLabel" name="lblQuantity">
+              <property name="text">
+               <string>Quantity:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="spnQuantity">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="value">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnAddToCart">
+              <property name="minimumSize">
+               <size>
+                <width>140</width>
+                <height>36</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Add to Cart</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="footerLayout">
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="lblTripSummary">
+       <property name="text">
+        <string>Total Distance: 0.0 mi | Total Cost: $0.00</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
