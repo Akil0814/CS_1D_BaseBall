@@ -239,7 +239,13 @@
           </item>
           <item>
            <widget class="QLabel" name="lblStadiumImage">
-            <property name="minimumSize">
+           <property name="minimumSize">
+            <size>
+             <width>280</width>
+             <height>180</height>
+            </size>
+           </property>
+            <property name="maximumSize">
              <size>
               <width>280</width>
               <height>180</height>
