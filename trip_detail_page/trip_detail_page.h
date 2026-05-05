@@ -33,6 +33,7 @@ private:
     void selectNextStop();
     void loadStadiumImage();
     void updateNavigationButtons();
+    void updateTripStopStyles();
     void updateStadiumSummary();
 
     Ui::TripDetailPage *_ui;

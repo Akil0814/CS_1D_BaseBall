@@ -4,6 +4,7 @@
 #include "../App/application.h"
 
 #include <QFile>
+#include <QListWidgetItem>
 #include <QMessageBox>
 #include <QPixmap>
 
@@ -12,6 +13,16 @@ TripDetailPage::TripDetailPage(QWidget *parent)
     , _ui(new Ui::TripDetailPage)
 {
     _ui->setupUi(this);
+    _ui->lstTripStops->setStyleSheet(
+        "QListWidget::item {"
+        "padding: 6px 8px;"
+        "border-radius: 6px;"
+        "}"
+        "QListWidget::item:selected {"
+        "background: rgb(191, 219, 254);"
+        "color: rgb(30, 41, 59);"
+        "}"
+        );
 
     _current_trip = APP->getTripPlanner()->getCurrentTrip();
 
@@ -81,6 +92,7 @@ void TripDetailPage::on_lstTripStops_currentRowChanged(int current_row)
             );
         updateStadiumSummary();
         updateNavigationButtons();
+        updateTripStopStyles();
         return;
     }
 
@@ -91,6 +103,7 @@ void TripDetailPage::on_lstTripStops_currentRowChanged(int current_row)
         );
     updateStadiumSummary();
     updateNavigationButtons();
+    updateTripStopStyles();
 }
 
 void TripDetailPage::loadTripStops()
@@ -149,6 +162,34 @@ void TripDetailPage::updateNavigationButtons()
 
     _ui->btnPreviousStop->setEnabled(has_selection && current_row > 0);
     _ui->btnNextStop->setEnabled(has_selection && current_row < count - 1);
+}
+
+void TripDetailPage::updateTripStopStyles()
+{
+    const int current_row = _ui->lstTripStops->currentRow();
+
+    for (int index = 0; index < _ui->lstTripStops->count(); ++index)
+    {
+        QListWidgetItem *item = _ui->lstTripStops->item(index);
+        if (item == nullptr)
+            continue;
+
+        if (current_row >= 0 && index < current_row)
+        {
+            item->setBackground(QColor(220, 252, 231));
+            item->setForeground(QColor(22, 101, 52));
+        }
+        else if (index == current_row)
+        {
+            item->setBackground(QColor(191, 219, 254));
+            item->setForeground(QColor(30, 41, 59));
+        }
+        else
+        {
+            item->setBackground(QColor(Qt::white));
+            item->setForeground(QColor(Qt::black));
+        }
+    }
 }
 
 void TripDetailPage::loadStadiumImage()
