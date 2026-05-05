@@ -170,6 +170,8 @@ bool DatabaseManager::resetDatabase(bool remove_backup_if_success)
     if (remove_backup_if_success && has_backup)
         QFile::remove(backup_path);
 
+    emit databaseReset();
+
     return true;
 }
 

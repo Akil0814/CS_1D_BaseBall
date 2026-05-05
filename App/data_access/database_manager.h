@@ -2,15 +2,16 @@
 #define DATABASE_MANAGER_H
 
 #include <QSqlDatabase>
+#include <QObject>
 #include <QSet>
 #include <QString>
 
 class Application;
 
-class DatabaseManager
+class DatabaseManager : public QObject
 {
     friend class Application;
-
+    Q_OBJECT
 public:
     // Initialize the database and required data.
     [[nodiscard]] bool init();
@@ -96,6 +97,10 @@ private:
     QString _db_path;
     QString _last_error;
     QString _last_warning;
+
+signals:
+    void databaseReset();
+
 };
 
 #endif // DATABASE_MANAGER_H

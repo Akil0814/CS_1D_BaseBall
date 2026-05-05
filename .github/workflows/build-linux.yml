@@ -15,6 +15,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache APT Packages
+        uses: actions/cache@v3
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -24,6 +32,14 @@ jobs:
             qt6-base-dev \
             qt6-tools-dev \
             qt6-tools-dev-tools
+
+      - name: Cache Build Folder
+        uses: actions/cache@v3
+        with:
+          path: build
+          key: ${{ runner.os }}-cmake-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
