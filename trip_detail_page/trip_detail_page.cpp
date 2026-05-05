@@ -3,22 +3,42 @@
 #include "../detail_window/detail_window.h"
 #include "../App/application.h"
 
+#include <QAbstractItemView>
 #include <QFile>
+#include <QHeaderView>
+#include <QLabel>
 #include <QListWidgetItem>
 #include <QMessageBox>
 #include <QPixmap>
+#include <QResizeEvent>
+#include <QTableWidgetItem>
 
 TripDetailPage::TripDetailPage(QWidget *parent)
     : QWidget(parent)
     , _ui(new Ui::TripDetailPage)
 {
     _ui->setupUi(this);
+    setFixedSize(1056, 686);
     _ui->lstTripStops->setStyleSheet(
         "QListWidget::item {"
         "padding: 6px 8px;"
         "border-radius: 6px;"
         "}"
+        "QListWidget::item:hover {"
+        "background: rgb(219, 234, 254);"
+        "color: rgb(30, 41, 59);"
+        "}"
         "QListWidget::item:selected {"
+        "background: rgb(191, 219, 254);"
+        "color: rgb(30, 41, 59);"
+        "}"
+        );
+    _ui->tblSouvenirs->setStyleSheet(
+        "QTableWidget::item:hover {"
+        "background: rgb(219, 234, 254);"
+        "color: rgb(30, 41, 59);"
+        "}"
+        "QTableWidget::item:selected {"
         "background: rgb(191, 219, 254);"
         "color: rgb(30, 41, 59);"
         "}"
@@ -138,6 +158,47 @@ void TripDetailPage::openMoreInfo()
     detail_window->show();
 }
 
+void TripDetailPage::loadSouvenirs()
+{
+    _ui->tblSouvenirs->clearContents();
+    _ui->tblSouvenirs->setRowCount(0);
+    _ui->tblSouvenirs->setColumnCount(2);
+
+    QStringList headers;
+    headers << "Souvenir" << "Price";
+    _ui->tblSouvenirs->setHorizontalHeaderLabels(headers);
+
+    _ui->tblSouvenirs->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    _ui->tblSouvenirs->setSelectionBehavior(QAbstractItemView::SelectRows);
+    _ui->tblSouvenirs->setSelectionMode(QAbstractItemView::SingleSelection);
+    _ui->tblSouvenirs->setAlternatingRowColors(true);
+    _ui->tblSouvenirs->verticalHeader()->setVisible(false);
+    _ui->tblSouvenirs->horizontalHeader()->setStretchLastSection(true);
+    _ui->tblSouvenirs->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    if (!_has_current_stadium || APP == nullptr || APP->souvenirRepository() == nullptr)
+    {
+        _ui->btnAddToCart->setEnabled(false);
+        return;
+    }
+
+    const std::vector<Souvenir> souvenirs =
+        APP->souvenirRepository()->getSouvenirsByStadiumID(_current_stadium->stadium_id);
+
+    _ui->tblSouvenirs->setRowCount(static_cast<int>(souvenirs.size()));
+
+    for (int row = 0; row < static_cast<int>(souvenirs.size()); ++row)
+    {
+        const Souvenir& souvenir = souvenirs[row];
+        _ui->tblSouvenirs->setItem(row, 0, new QTableWidgetItem(souvenir.name));
+        _ui->tblSouvenirs->setItem(
+            row, 1, new QTableWidgetItem("$" + QString::number(souvenir.price, 'f', 2))
+            );
+    }
+
+    _ui->btnAddToCart->setEnabled(!souvenirs.empty());
+}
+
 void TripDetailPage::selectPreviousStop()
 {
     const int current_row = _ui->lstTripStops->currentRow();
@@ -162,6 +223,30 @@ void TripDetailPage::updateNavigationButtons()
 
     _ui->btnPreviousStop->setEnabled(has_selection && current_row > 0);
     _ui->btnNextStop->setEnabled(has_selection && current_row < count - 1);
+}
+
+void TripDetailPage::setElidedLabelText(QLabel *label, const QString& full_text)
+{
+    if (label == nullptr)
+        return;
+
+    const int available_width = qMax(0, label->width() - 4);
+    const QString displayed_text = label->fontMetrics().elidedText(
+        full_text,
+        Qt::ElideRight,
+        available_width
+        );
+
+    label->setText(displayed_text);
+    label->setToolTip(full_text);
+}
+
+void TripDetailPage::updateDisplayedStadiumTexts()
+{
+    setElidedLabelText(_ui->lblSelectedStadium, _selected_stadium_text);
+    setElidedLabelText(_ui->lblTeamNameValue, _team_name_text);
+    setElidedLabelText(_ui->lblLeagueValue, _league_text);
+    setElidedLabelText(_ui->lblLocationValue, _location_text);
 }
 
 void TripDetailPage::updateTripStopStyles()
@@ -190,6 +275,12 @@ void TripDetailPage::updateTripStopStyles()
             item->setForeground(QColor(Qt::black));
         }
     }
+}
+
+void TripDetailPage::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    updateDisplayedStadiumTexts();
 }
 
 void TripDetailPage::loadStadiumImage()
@@ -229,19 +320,23 @@ void TripDetailPage::updateStadiumSummary()
 {
     if (!_has_current_stadium)
     {
-        _ui->lblSelectedStadium->setText("No stadium selected");
-        _ui->lblTeamNameValue->setText("N/A");
-        _ui->lblLeagueValue->setText("N/A");
-        _ui->lblLocationValue->setText("N/A");
+        _selected_stadium_text = "No stadium selected";
+        _team_name_text = "N/A";
+        _league_text = "N/A";
+        _location_text = "N/A";
+        updateDisplayedStadiumTexts();
         _ui->btnMoreInfo->setEnabled(false);
+        loadSouvenirs();
         loadStadiumImage();
         return;
     }
 
-    _ui->lblSelectedStadium->setText(_current_stadium->stadium_name);
-    _ui->lblTeamNameValue->setText(_current_stadium->team_name);
-    _ui->lblLeagueValue->setText(_current_stadium->league);
-    _ui->lblLocationValue->setText(_current_stadium->location);
+    _selected_stadium_text = _current_stadium->stadium_name;
+    _team_name_text = _current_stadium->team_name;
+    _league_text = _current_stadium->league;
+    _location_text = _current_stadium->location;
+    updateDisplayedStadiumTexts();
     _ui->btnMoreInfo->setEnabled(true);
+    loadSouvenirs();
     loadStadiumImage();
 }
