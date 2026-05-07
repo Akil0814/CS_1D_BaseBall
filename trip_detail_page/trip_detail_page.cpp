@@ -43,6 +43,14 @@ TripDetailPage::TripDetailPage(QWidget *parent)
         "color: rgb(30, 41, 59);"
         "}"
         );
+    connect(_ui->btnViewCart, &QPushButton::clicked, this, &TripDetailPage::handleViewCartClick);
+    connect(_ui->btnEndTrip, &QPushButton::clicked, this, &TripDetailPage::handleEndTripClick);
+    connect(_ui->btnPreviousStop, &QPushButton::clicked, this, &TripDetailPage::handlePreviousStopClick);
+    connect(_ui->btnNextStop, &QPushButton::clicked, this, &TripDetailPage::handleNextStopClick);
+    connect(_ui->btnMoreInfo, &QPushButton::clicked, this, &TripDetailPage::handleMoreInfoClick);
+    connect(_ui->btnAddToCart, &QPushButton::clicked, this, &TripDetailPage::handleAddToCartClick);
+    connect(_ui->lstTripStops, &QListWidget::currentRowChanged,
+            this, &TripDetailPage::handleTripStopsCurrentRowChange);
 
     _current_trip = APP->getTripPlanner()->getCurrentTrip();
 
@@ -55,15 +63,7 @@ TripDetailPage::TripDetailPage(QWidget *parent)
 
     _all_stadiums = &(_current_trip->getResult().stadiums);
     loadTripStops();
-
-    _current_stadium = _current_trip->getCurrentStop();
-    _has_current_stadium = (_current_stadium != nullptr);
-
-    if (_current_trip->stopCount() > 0)
-        _ui->lstTripStops->setCurrentRow(static_cast<int>(_current_trip->currentStopIndex()));
-
-    updateStadiumSummary();
-    updateNavigationButtons();
+    syncFromCurrentTrip();
 }
 
 TripDetailPage::~TripDetailPage()
@@ -71,59 +71,47 @@ TripDetailPage::~TripDetailPage()
     delete _ui;
 }
 
-void TripDetailPage::on_btnViewCart_clicked()
+void TripDetailPage::handleViewCartClick()
 {
 }
 
-void TripDetailPage::on_btnEndTrip_clicked()
+void TripDetailPage::handleEndTripClick()
 {
 }
 
-void TripDetailPage::on_btnPreviousStop_clicked()
+void TripDetailPage::handlePreviousStopClick()
 {
     selectPreviousStop();
 }
 
-void TripDetailPage::on_btnNextStop_clicked()
+void TripDetailPage::handleNextStopClick()
 {
     selectNextStop();
 }
 
-void TripDetailPage::on_btnMoreInfo_clicked()
+void TripDetailPage::handleMoreInfoClick()
 {
     openMoreInfo();
 }
 
-void TripDetailPage::on_btnAddToCart_clicked()
+void TripDetailPage::handleAddToCartClick()
 {
 
 }
 
-void TripDetailPage::on_lstTripStops_currentRowChanged(int current_row)
+void TripDetailPage::handleTripStopsCurrentRowChange(int currentRow)
 {
-    if (_all_stadiums == nullptr ||
-        current_row < 0 ||
-        current_row >= static_cast<int>(_all_stadiums->size()))
+    if (_is_syncing_selection)
+        return;
+
+    if (_current_trip == nullptr || _all_stadiums == nullptr)
     {
-        _current_stadium = nullptr;
-        _has_current_stadium = false;
-        _ui->lblTripProgress->setText(
-            QString("Stop 0 of %1").arg(_all_stadiums == nullptr ? 0 : static_cast<int>(_all_stadiums->size()))
-            );
-        updateStadiumSummary();
-        updateNavigationButtons();
-        updateTripStopStyles();
         return;
     }
 
-    _current_stadium = &(*_all_stadiums)[current_row];
-    _has_current_stadium = true;
-    _ui->lblTripProgress->setText(
-        QString("Stop %1 of %2").arg(current_row + 1).arg(static_cast<int>(_all_stadiums->size()))
-        );
-    updateStadiumSummary();
-    updateNavigationButtons();
-    updateTripStopStyles();
+    const int trip_row = static_cast<int>(_current_trip->currentStopIndex());
+    if (currentRow != trip_row)
+        syncFromCurrentTrip();
 }
 
 void TripDetailPage::loadTripStops()
@@ -156,6 +144,38 @@ void TripDetailPage::openMoreInfo()
     DetailWindow *detail_window = new DetailWindow(*_current_stadium, this);
     detail_window->setAttribute(Qt::WA_DeleteOnClose);
     detail_window->show();
+}
+
+void TripDetailPage::syncFromCurrentTrip()
+{
+    if (_current_trip == nullptr || _all_stadiums == nullptr || !_current_trip->hasStops())
+    {
+        _current_stadium = nullptr;
+        _has_current_stadium = false;
+        _ui->lblTripProgress->setText(
+            QString("Stop 0 of %1").arg(_all_stadiums == nullptr ? 0 : static_cast<int>(_all_stadiums->size()))
+            );
+        updateStadiumSummary();
+        updateNavigationButtons();
+        updateTripStopStyles();
+        return;
+    }
+
+    const int current_row = static_cast<int>(_current_trip->currentStopIndex());
+
+    _current_stadium = _current_trip->getCurrentStop();
+    _has_current_stadium = (_current_stadium != nullptr);
+    _ui->lblTripProgress->setText(
+        QString("Stop %1 of %2").arg(current_row + 1).arg(static_cast<int>(_all_stadiums->size()))
+        );
+
+    _is_syncing_selection = true;
+    _ui->lstTripStops->setCurrentRow(current_row);
+    _is_syncing_selection = false;
+
+    updateStadiumSummary();
+    updateNavigationButtons();
+    updateTripStopStyles();
 }
 
 void TripDetailPage::loadSouvenirs()
@@ -201,28 +221,33 @@ void TripDetailPage::loadSouvenirs()
 
 void TripDetailPage::selectPreviousStop()
 {
-    const int current_row = _ui->lstTripStops->currentRow();
-    if (current_row > 0)
-        _ui->lstTripStops->setCurrentRow(current_row - 1);
+    if (_current_trip == nullptr)
+        return;
+
+    if (_current_trip->goBackLastStop())
+        syncFromCurrentTrip();
 }
 
 void TripDetailPage::selectNextStop()
 {
-    const int current_row = _ui->lstTripStops->currentRow();
-    const int last_row = _ui->lstTripStops->count() - 1;
+    if (_current_trip == nullptr)
+        return;
 
-    if (current_row >= 0 && current_row < last_row)
-        _ui->lstTripStops->setCurrentRow(current_row + 1);
+    if (_current_trip->goNextStop())
+        syncFromCurrentTrip();
 }
 
 void TripDetailPage::updateNavigationButtons()
 {
-    const int count = _ui->lstTripStops->count();
-    const int current_row = _ui->lstTripStops->currentRow();
-    const bool has_selection = current_row >= 0 && current_row < count;
+    if (_current_trip == nullptr || !_current_trip->hasStops())
+    {
+        _ui->btnPreviousStop->setEnabled(false);
+        _ui->btnNextStop->setEnabled(false);
+        return;
+    }
 
-    _ui->btnPreviousStop->setEnabled(has_selection && current_row > 0);
-    _ui->btnNextStop->setEnabled(has_selection && current_row < count - 1);
+    _ui->btnPreviousStop->setEnabled(!_current_trip->isAtFirstStop());
+    _ui->btnNextStop->setEnabled(!_current_trip->isAtLastStop());
 }
 
 void TripDetailPage::setElidedLabelText(QLabel *label, const QString& full_text)

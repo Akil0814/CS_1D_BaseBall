@@ -22,18 +22,19 @@ public:
     ~TripDetailPage();
 
 private slots:
-    void on_btnViewCart_clicked();
-    void on_btnEndTrip_clicked();
-    void on_btnPreviousStop_clicked();
-    void on_btnNextStop_clicked();
-    void on_btnMoreInfo_clicked();
-    void on_btnAddToCart_clicked();
-    void on_lstTripStops_currentRowChanged(int current_row);
+    void handleViewCartClick();
+    void handleEndTripClick();
+    void handlePreviousStopClick();
+    void handleNextStopClick();
+    void handleMoreInfoClick();
+    void handleAddToCartClick();
+    void handleTripStopsCurrentRowChange(int currentRow);
 
 private:
     void loadTripStops();
     void loadSouvenirs();
     void openMoreInfo();
+    void syncFromCurrentTrip();
     void selectPreviousStop();
     void selectNextStop();
     void loadStadiumImage();
@@ -51,6 +52,7 @@ protected:
     const std::vector<Stadium>* _all_stadiums = nullptr;
     const Stadium* _current_stadium = nullptr;
     bool _has_current_stadium = false;
+    bool _is_syncing_selection = false;
     QString _selected_stadium_text;
     QString _team_name_text;
     QString _league_text;
