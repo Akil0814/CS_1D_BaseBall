@@ -4,8 +4,6 @@
 
 
 
-#include "../trip_planning/tour_shop_page/tour_shop_window.h"
-
 
 #include <QPixmap>
 

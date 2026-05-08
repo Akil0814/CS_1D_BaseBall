@@ -1,6 +1,6 @@
 #include "tripplanningpage.h"
 #include "ui_tripplanningpage.h"
-#include "trip_detail_page/trip_detail_page.h"
+#include "trip_planning/trip_detail_page/trip_detail_page.h"
 
 #include <QPushButton>
 #include <QComboBox>

@@ -3,7 +3,7 @@
 #include "ui_main_window.h"
 #include "browse_window.h"
 #include "main_page.h"
-#include "trip_detail_page/trip_detail_page.h"
+#include "trip_planning/trip_detail_page/trip_detail_page.h"
 #include "tripplanningpage.h"
 
 #include <QPushButton>

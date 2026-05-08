@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
          
     MainWindow w;
     TripDetailPage detail;
-    detail.show();
+    //detail.show();
     //test();
 
     // Uncomment to rebuild the database.

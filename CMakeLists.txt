@@ -24,10 +24,9 @@ set(PROJECT_SOURCES
     tripplanningpage.cpp
     tripplanningpage.ui
 
-    trip_detail_page/trip_detail_page.h
-    trip_detail_page/trip_detail_page.cpp
-    trip_detail_page/trip_detail_page.ui
-
+    trip_planning/trip_detail_page/trip_detail_page.h
+    trip_planning/trip_detail_page/trip_detail_page.cpp
+    trip_planning/trip_detail_page/trip_detail_page.ui
     AdminPage/AdminPage.cpp
     AdminPage/AdminPage.h
     AdminPage/AdminPage.ui
