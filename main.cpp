@@ -7,6 +7,7 @@
 #include "AdminPage/LoginPage.h"
 #include "App/application.h"
 #include "main_page/main_page.h"
+#include "trip_planning/trip_detail_page/trip_detail_page.h"
 
 //void test();
 
@@ -23,6 +24,8 @@ int main(int argc, char *argv[])
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
+    TripDetailPage detail;
+    detail.show();
     //test();
 
     // Uncomment to rebuild the database.
