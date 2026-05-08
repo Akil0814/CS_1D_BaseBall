@@ -1,7 +1,7 @@
 #include "main_page.h"
 #include "ui_main_page.h"
 #include "App/application.h"
-#include "tour_shop_window.h"
+#include "../trip_planning/tour_shop_page/tour_shop_window.h"
 
 #include <QPixmap>
 #include <QPushButton>
