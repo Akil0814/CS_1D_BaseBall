@@ -3,6 +3,8 @@
 #include "ui_main_window.h"
 #include "browse_window.h"
 #include "main_page.h"
+#include "trip_detail_page/trip_detail_page.h"
+#include "tripplanningpage.h"
 
 #include <QPushButton>
 #include <QTabWidget>
@@ -16,6 +18,16 @@ MainWindow::MainWindow(QWidget *parent)
     // Buttons live inside the embedded main_page widget
     QPushButton *btnBrowse = ui->widget->findChild<QPushButton*>("btnBrowse");
     QPushButton *btnAdmin = ui->widget->findChild<QPushButton*>("btnAdmin");
+    QPushButton *btnTripPlanning = ui->widget->findChild<QPushButton*>("btnTripPlanning");
+
+    if (btnTripPlanning)
+    {
+        connect(btnTripPlanning, &QPushButton::clicked, this, [this]() {
+            TripPlanningPage *tripPlanningPage = new TripPlanningPage(this);
+            tripPlanningPage->setAttribute(Qt::WA_DeleteOnClose);
+            tripPlanningPage->show();
+        });
+    }
 
     if (btnBrowse)
     {

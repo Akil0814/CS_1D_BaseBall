@@ -161,25 +161,36 @@ bool TripPlanner::planCustomUnorderedEfficientTrip(
     const std::vector<int>& selected_targets)
 {
     if (selected_targets.empty())
+    {
+        qDebug() << "Custom efficient trip failed: selected_targets is empty";
         return false;
+    }
 
     std::unordered_set<int> remaining(
         selected_targets.begin(),
         selected_targets.end()
-    );
+        );
 
     std::vector<int> route;
     int current = start_stadium_id;
     route.push_back(current);
+
+    qDebug() << "Starting stadium id:" << current;
+    qDebug() << "Selected targets:" << selected_targets;
 
     while (!remaining.empty())
     {
         int nearest = -1;
         double best_dist = std::numeric_limits<double>::max();
 
+        qDebug() << "Current stadium:" << current;
+        qDebug() << "Remaining targets:" << remaining;
+
         for (int candidate : remaining)
         {
             double d = getDistance(current, candidate);
+            qDebug() << "Checking distance from" << current << "to" << candidate << "=" << d;
+
             if (d < best_dist)
             {
                 best_dist = d;
@@ -187,8 +198,13 @@ bool TripPlanner::planCustomUnorderedEfficientTrip(
             }
         }
 
-        if (nearest == -1)
+        if (nearest == -1 || best_dist == std::numeric_limits<double>::max())
+        {
+            qDebug() << "No valid nearest stadium found from current =" << current;
             return false;
+        }
+
+        qDebug() << "Nearest chosen:" << nearest << "distance =" << best_dist;
 
         route.push_back(nearest);
         current = nearest;

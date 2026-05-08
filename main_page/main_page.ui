@@ -41,7 +41,7 @@
        <string>Browse</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="btnTourShop">
+     <widget class="QPushButton" name="btnTripPlanning">
       <property name="geometry">
        <rect>
         <x>240</x>

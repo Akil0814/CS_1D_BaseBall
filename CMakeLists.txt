@@ -20,6 +20,10 @@ set(PROJECT_SOURCES
         main_window.h
         main_window.ui
 
+        tripplanningpage.h
+        tripplanningpage.cpp
+        tripplanningpage.ui
+
         AdminPage/AdminPage.cpp
         AdminPage/AdminPage.h
         AdminPage/AdminPage.ui
@@ -48,9 +52,8 @@ if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        tour_shop_window.h tour_shop_window.cpp tour_shop_window.ui
-        mapwindow.h mapwindow.cpp mapwindow.ui
         trip_detail_page/trip_detail_page.h trip_detail_page/trip_detail_page.cpp trip_detail_page/trip_detail_page.ui
+        tripplanningpage.h tripplanningpage.cpp tripplanningpage.ui
 
     )
 else()
