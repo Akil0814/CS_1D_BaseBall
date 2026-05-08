@@ -15,96 +15,94 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql)
 add_subdirectory(App)
 
 set(PROJECT_SOURCES
-        main.cpp
-        main_window.cpp
-        main_window.h
-        main_window.ui
+    main.cpp
+    main_window.cpp
+    main_window.h
+    main_window.ui
 
-        tripplanningpage.h
-        tripplanningpage.cpp
-        tripplanningpage.ui
+    tripplanningpage.h
+    tripplanningpage.cpp
+    tripplanningpage.ui
 
-        AdminPage/AdminPage.cpp
-        AdminPage/AdminPage.h
-        AdminPage/AdminPage.ui
-        AdminPage/LoginPage.cpp
-        AdminPage/LoginPage.h
-        AdminPage/LoginPage.ui
-        AdminPage/DashboardPage.cpp
-        AdminPage/DashboardPage.h
-        AdminPage/DashboardPage.ui
-        AdminPage/souvenir_adding/newsouvenirpopup.h
-        AdminPage/souvenir_adding/newsouvenirpopup.cpp
-        AdminPage/souvenir_adding/newsouvenirpopup.ui
+    trip_detail_page/trip_detail_page.h
+    trip_detail_page/trip_detail_page.cpp
+    trip_detail_page/trip_detail_page.ui
 
-        main_page/main_page.cpp
-        main_page/main_page.h
-        main_page/main_page.ui
-        browse_window/browse_window.cpp
-        browse_window/browse_window.h
-        browse_window/browse_window.ui
-        detail_window/detail_window.cpp
-        detail_window/detail_window.h
-        detail_window/detail_window.ui
+    AdminPage/AdminPage.cpp
+    AdminPage/AdminPage.h
+    AdminPage/AdminPage.ui
+    AdminPage/LoginPage.cpp
+    AdminPage/LoginPage.h
+    AdminPage/LoginPage.ui
+    AdminPage/DashboardPage.cpp
+    AdminPage/DashboardPage.h
+    AdminPage/DashboardPage.ui
+    AdminPage/souvenir_adding/newsouvenirpopup.h
+    AdminPage/souvenir_adding/newsouvenirpopup.cpp
+    AdminPage/souvenir_adding/newsouvenirpopup.ui
+
+    main_page/main_page.cpp
+    main_page/main_page.h
+    main_page/main_page.ui
+
+    browse_window/browse_window.cpp
+    browse_window/browse_window.h
+    browse_window/browse_window.ui
+
+    detail_window/detail_window.cpp
+    detail_window/detail_window.h
+    detail_window/detail_window.ui
 )
 
 if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        trip_detail_page/trip_detail_page.h trip_detail_page/trip_detail_page.cpp trip_detail_page/trip_detail_page.ui
-        tripplanningpage.h tripplanningpage.cpp tripplanningpage.ui
-
     )
 else()
     add_executable(CS_1D_BaseBall ${PROJECT_SOURCES})
 endif()
 
 target_include_directories(CS_1D_BaseBall PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
-        ${CMAKE_CURRENT_SOURCE_DIR}/main_page
-        ${CMAKE_CURRENT_SOURCE_DIR}/browse_window
-        ${CMAKE_CURRENT_SOURCE_DIR}/detail_window
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/AdminPage
+    ${CMAKE_CURRENT_SOURCE_DIR}/main_page
+    ${CMAKE_CURRENT_SOURCE_DIR}/browse_window
+    ${CMAKE_CURRENT_SOURCE_DIR}/detail_window
+    ${CMAKE_CURRENT_SOURCE_DIR}/trip_detail_page
 )
 
 target_link_libraries(CS_1D_BaseBall PRIVATE
-        Qt${QT_VERSION_MAJOR}::Widgets
-        Qt${QT_VERSION_MAJOR}::Sql
-        Qt${QT_VERSION_MAJOR}::Core
-        app
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Sql
+    Qt${QT_VERSION_MAJOR}::Core
+    app
 )
 
 set_target_properties(CS_1D_BaseBall PROPERTIES
-        MACOSX_BUNDLE TRUE
-        WIN32_EXECUTABLE FALSE
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE FALSE
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(CS_1D_BaseBall)
 endif()
 
-# =====================================================
-# CLI TEST EXECUTABLE (IMPORTANT PART)
-# =====================================================
 add_executable(CS_1D_BaseBall_CLI
-        App/services/trip_planner_cli.cpp
+    App/services/trip_planner_cli.cpp
 )
 
 target_include_directories(CS_1D_BaseBall_CLI PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/App
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/App
 )
 
 target_link_libraries(CS_1D_BaseBall_CLI PRIVATE
-        app
-        Qt${QT_VERSION_MAJOR}::Core
-        Qt${QT_VERSION_MAJOR}::Sql
+    app
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Sql
 )
 
-# =====================================================
-# INSTALL
-# =====================================================
 include(GNUInstallDirs)
 
 install(TARGETS CS_1D_BaseBall
@@ -112,7 +110,3 @@ install(TARGETS CS_1D_BaseBall
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
-#if(QT_VERSION_MAJOR EQUAL 6)
-#    qt_finalize_executable(CS_1D_BaseBall)
-#endif()
