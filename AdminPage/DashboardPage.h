@@ -34,7 +34,9 @@ private slots:
 
     void on_removeSouvenirButton_clicked();
 
-void refreshConnections();
+    void on_uploadFile_clicked();
+
+    void refreshConnections();
 
 private:
     Ui::DashboardPage *ui;
