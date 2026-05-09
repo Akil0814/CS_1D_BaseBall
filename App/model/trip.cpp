@@ -62,6 +62,35 @@ const ShoppingCart* Trip::getShoppingCart() const
     return &_cart;
 }
 
+bool Trip::addSouvenirToCart(const Souvenir& souvenir, int quantity)
+{
+    if (!_cart.addItem(souvenir, quantity))
+        return false;
+
+    _all_trip_stop.total_cost = _cart.totalCost();
+    return true;
+}
+
+bool Trip::removeCartItemAt(size_t index)
+{
+    if (!_cart.removeItemAt(index))
+        return false;
+
+    _all_trip_stop.total_cost = _cart.totalCost();
+    return true;
+}
+
+void Trip::clearShoppingCart()
+{
+    _cart.clear();
+    _all_trip_stop.total_cost = 0.0;
+}
+
+double Trip::totalCost() const
+{
+    return _cart.totalCost();
+}
+
 bool Trip::hasStops() const
 {
     return !_all_trip_stop.stadiums.empty();

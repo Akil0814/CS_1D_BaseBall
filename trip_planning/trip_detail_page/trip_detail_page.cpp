@@ -1,5 +1,6 @@
 #include "trip_detail_page.h"
 #include "ui_trip_detail_page.h"
+#include "../cart_page/cart_page.h"
 #include "../detail_window/detail_window.h"
 #include "../App/application.h"
 
@@ -11,6 +12,7 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QResizeEvent>
+#include <QStringList>
 #include <QTableWidgetItem>
 
 TripDetailPage::TripDetailPage(QWidget *parent)
@@ -63,6 +65,7 @@ TripDetailPage::TripDetailPage(QWidget *parent)
     }
 
     _all_stadiums = &(_current_trip->getResult().stadiums);
+    _transit_flags = &(_current_trip->getResult().transit_flags);
     loadTripStops();
     syncFromCurrentTrip();
 }
@@ -74,10 +77,34 @@ TripDetailPage::~TripDetailPage()
 
 void TripDetailPage::handleViewCartClick()
 {
+    CartPage* cart_page = new CartPage(_current_trip, this);
+    cart_page->setAttribute(Qt::WA_DeleteOnClose);
+    connect(cart_page, &CartPage::cartUpdated, this, [this]() {
+        updateTripSummary();
+    });
+    cart_page->show();
 }
 
 void TripDetailPage::handleEndTripClick()
 {
+    if (_current_trip == nullptr)
+    {
+        close();
+        return;
+    }
+
+    const QMessageBox::StandardButton response = QMessageBox::question(
+        this,
+        "End Trip",
+        "End this trip and close the trip detail page?",
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No
+        );
+
+    if (response != QMessageBox::Yes)
+        return;
+
+    showCartSummary("Trip Summary", true);
 }
 
 void TripDetailPage::handlePreviousStopClick()
@@ -97,7 +124,51 @@ void TripDetailPage::handleMoreInfoClick()
 
 void TripDetailPage::handleAddToCartClick()
 {
+    if (_current_trip == nullptr || !_has_current_stadium || APP == nullptr)
+    {
+        QMessageBox::warning(this, "Add to Cart", "No active trip stop is available.");
+        return;
+    }
 
+    SouvenirRepository* souvenir_repo = APP->souvenirRepository();
+    if (souvenir_repo == nullptr)
+    {
+        QMessageBox::warning(this, "Add to Cart", "Souvenir data is not available.");
+        return;
+    }
+
+    const int current_row = _ui->tblSouvenirs->currentRow();
+    if (current_row < 0)
+    {
+        QMessageBox::information(this, "Add to Cart", "Select a souvenir before adding it to the cart.");
+        return;
+    }
+
+    const std::vector<Souvenir> souvenirs =
+        souvenir_repo->getSouvenirsByStadiumID(_current_stadium->stadium_id);
+
+    if (current_row >= static_cast<int>(souvenirs.size()))
+    {
+        QMessageBox::warning(this, "Add to Cart", "The selected souvenir could not be loaded.");
+        return;
+    }
+
+    const Souvenir& selected_souvenir = souvenirs[current_row];
+    const int quantity = _ui->spnQuantity->value();
+    if (!_current_trip->addSouvenirToCart(selected_souvenir, quantity))
+    {
+        QMessageBox::warning(this, "Add to Cart", "Failed to add the selected souvenir to the cart.");
+        return;
+    }
+
+    updateTripSummary();
+    QMessageBox::information(
+        this,
+        "Added to Cart",
+        QString("Added %1 x %2 to the cart.")
+            .arg(quantity)
+            .arg(selected_souvenir.name)
+        );
 }
 
 void TripDetailPage::handleTripStopsCurrentRowChange(int currentRow)
@@ -125,10 +196,23 @@ void TripDetailPage::loadTripStops()
     for (int index = 0; index < static_cast<int>(_all_stadiums->size()); ++index)
     {
         const Stadium& stadium = (*_all_stadiums)[index];
+        const bool is_transit =
+            (_transit_flags != nullptr &&
+             index < static_cast<int>(_transit_flags->size()) &&
+             (*_transit_flags)[index]);
         const QString display_text = QString("%1. %2")
                                          .arg(index + 1)
-                                         .arg(stadium.stadium_name);
-        _ui->lstTripStops->addItem(display_text);
+                                         .arg(is_transit
+                                                  ? stadium.stadium_name + " (Transit)"
+                                                  : stadium.stadium_name);
+        QListWidgetItem *item = new QListWidgetItem(display_text);
+        if (is_transit)
+        {
+            QFont font = item->font();
+            font.setItalic(true);
+            item->setFont(font);
+        }
+        _ui->lstTripStops->addItem(item);
     }
 }
 
@@ -220,6 +304,8 @@ void TripDetailPage::loadSouvenirs()
     }
 
     _ui->btnAddToCart->setEnabled(!souvenirs.empty());
+    if (!souvenirs.empty())
+        _ui->tblSouvenirs->setCurrentCell(0, 0);
 }
 
 void TripDetailPage::selectPreviousStop()
@@ -360,6 +446,13 @@ void TripDetailPage::updateStadiumSummary()
     }
 
     _selected_stadium_text = _current_stadium->stadium_name;
+    const size_t current_index = _current_trip == nullptr ? 0 : _current_trip->currentStopIndex();
+    const bool is_transit =
+        (_transit_flags != nullptr &&
+         current_index < _transit_flags->size() &&
+         (*_transit_flags)[current_index]);
+    if (is_transit)
+        _selected_stadium_text += " (Transit)";
     _team_name_text = _current_stadium->team_name;
     _league_text = _current_stadium->league;
     _location_text = _current_stadium->location;
@@ -381,6 +474,104 @@ void TripDetailPage::updateTripSummary()
     _ui->lblTripSummary->setText(
         QString("Total Distance: %1 mi | Total Cost: $%2")
             .arg(QString::number(result.total_distance, 'f', 1))
-            .arg(QString::number(result.total_cost, 'f', 2))
+            .arg(QString::number(_current_trip->totalCost(), 'f', 2))
         );
+}
+
+QString TripDetailPage::buildCartSummaryText(bool include_trip_totals) const
+{
+    if (_current_trip == nullptr || _current_trip->getShoppingCart() == nullptr)
+        return "No active trip is available.";
+
+    const ShoppingCart* cart = _current_trip->getShoppingCart();
+    if (cart->empty())
+    {
+        QString empty_message = "Your shopping cart is empty.";
+        if (include_trip_totals)
+        {
+            empty_message += QString("\n\nTrip Distance: %1 mi")
+                                 .arg(QString::number(_current_trip->getResult().total_distance, 'f', 1));
+        }
+        return empty_message;
+    }
+
+    QStringList lines;
+    std::vector<int> grouped_stadium_ids;
+
+    for (const CartItem& cart_item : cart->items())
+    {
+        const int stadium_id = cart_item.item_souvenir.owner_stadium_id;
+        bool already_grouped = false;
+
+        for (int existing_id : grouped_stadium_ids)
+        {
+            if (existing_id == stadium_id)
+            {
+                already_grouped = true;
+                break;
+            }
+        }
+
+        if (!already_grouped)
+            grouped_stadium_ids.push_back(stadium_id);
+    }
+
+    for (int stadium_id : grouped_stadium_ids)
+    {
+        lines << resolveStadiumName(stadium_id);
+
+        for (const CartItem& cart_item : cart->items())
+        {
+            if (cart_item.item_souvenir.owner_stadium_id != stadium_id)
+                continue;
+
+            lines << QString("  %1 x %2 @ $%3")
+                         .arg(cart_item.quantity)
+                         .arg(cart_item.item_souvenir.name)
+                         .arg(QString::number(cart_item.item_souvenir.price, 'f', 2));
+        }
+
+        lines << QString("  Stadium Total: $%1")
+                     .arg(QString::number(cart->totalCostForStadium(stadium_id), 'f', 2));
+        lines << "";
+    }
+
+    if (!lines.isEmpty() && lines.back().isEmpty())
+        lines.removeLast();
+
+    if (include_trip_totals)
+    {
+        lines << "";
+        lines << QString("Trip Distance: %1 mi")
+                     .arg(QString::number(_current_trip->getResult().total_distance, 'f', 1));
+    }
+
+    lines << QString("Items Purchased: %1").arg(cart->totalQuantity());
+    lines << QString("Grand Total: $%1").arg(QString::number(cart->totalCost(), 'f', 2));
+
+    return lines.join('\n');
+}
+
+QString TripDetailPage::resolveStadiumName(int stadium_id) const
+{
+    if (APP == nullptr || APP->stadiumRepository() == nullptr)
+        return QString("Stadium #%1").arg(stadium_id);
+
+    const std::optional<Stadium> stadium = APP->stadiumRepository()->getStadiumByID(stadium_id);
+    if (!stadium.has_value())
+        return QString("Stadium #%1").arg(stadium_id);
+
+    return stadium->stadium_name;
+}
+
+void TripDetailPage::showCartSummary(const QString& title, bool close_after_showing)
+{
+    QMessageBox summary_box(this);
+    summary_box.setWindowTitle(title);
+    summary_box.setIcon(QMessageBox::Information);
+    summary_box.setText(buildCartSummaryText(close_after_showing));
+    summary_box.exec();
+
+    if (close_after_showing)
+        close();
 }

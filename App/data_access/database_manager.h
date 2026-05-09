@@ -6,6 +6,8 @@
 #include <QSet>
 #include <QString>
 
+#include "_my_unoredred_map.h"
+
 class Application;
 
 class DatabaseManager : public QObject
@@ -80,6 +82,8 @@ private:
     DatabaseManager& operator=(DatabaseManager&& move) = delete;
 
 private:
+
+    MTL_A::MyUnorderedMap<std::string, int> _data_map;
 
     bool  _core_initialized = false;
     bool  _fully_initialized = false;

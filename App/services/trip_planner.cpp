@@ -209,17 +209,20 @@ bool TripPlanner::buildShortestPath(
     return true;
 }
 
-bool TripPlanner::buildRouteFromVisitOrder(
+bool TripPlanner::buildAnnotatedRouteFromVisitOrder(
     const std::vector<int>& visit_order,
-    std::vector<int>& route
+    std::vector<int>& route,
+    std::vector<bool>& transit_flags
     ) const
 {
     route.clear();
+    transit_flags.clear();
 
     if (visit_order.empty())
         return false;
 
     route.push_back(visit_order.front());
+    transit_flags.push_back(false);
 
     for (size_t index = 1; index < visit_order.size(); ++index)
     {
@@ -232,20 +235,31 @@ bool TripPlanner::buildRouteFromVisitOrder(
         if (!buildShortestPath(route.back(), visit_order[index], distances, previous, path))
             return false;
 
-        route.insert(route.end(), path.begin() + 1, path.end());
+        for (size_t path_index = 1; path_index < path.size(); ++path_index)
+        {
+            route.push_back(path[path_index]);
+            transit_flags.push_back(path_index + 1 == path.size() ? false : true);
+        }
     }
 
     return true;
 }
 
-TripResult TripPlanner::buildTripResultFromRoute(const std::vector<int>& route) const
+TripResult TripPlanner::buildTripResultFromRoute(
+    const std::vector<int>& route,
+    const std::vector<bool>& transit_flags
+    ) const
 {
     TripResult result;
+    if (route.size() != transit_flags.size())
+        return result;
+
     double total = 0.0;
 
     for (size_t index = 0; index < route.size(); ++index)
     {
         result.stadiums.push_back(getStadiumById(route[index]));
+        result.transit_flags.push_back(transit_flags[index]);
 
         if (index == 0)
             continue;
@@ -296,10 +310,11 @@ bool TripPlanner::planCustomOrderedTrip(
         visit_order.push_back(id);
 
     std::vector<int> route;
-    if (!buildRouteFromVisitOrder(visit_order, route))
+    std::vector<bool> transit_flags;
+    if (!buildAnnotatedRouteFromVisitOrder(visit_order, route, transit_flags))
         return false;
 
-    TripResult result = buildTripResultFromRoute(route);
+    TripResult result = buildTripResultFromRoute(route, transit_flags);
     if (result.stadiums.empty())
         return false;
 
@@ -322,9 +337,9 @@ bool TripPlanner::planCustomUnorderedEfficientTrip(
         selected_targets.end()
         );
 
-    std::vector<int> route;
+    std::vector<int> visit_order;
     int current = start_stadium_id;
-    route.push_back(current);
+    visit_order.push_back(current);
 
     while (!remaining.empty())
     {
@@ -354,15 +369,18 @@ bool TripPlanner::planCustomUnorderedEfficientTrip(
             return false;
 
         for (size_t index = 1; index < path.size(); ++index)
-        {
-            route.push_back(path[index]);
             remaining.erase(path[index]);
-        }
 
-        current = route.back();
+        visit_order.push_back(nearest);
+        current = nearest;
     }
 
-    TripResult result = buildTripResultFromRoute(route);
+    std::vector<int> route;
+    std::vector<bool> transit_flags;
+    if (!buildAnnotatedRouteFromVisitOrder(visit_order, route, transit_flags))
+        return false;
+
+    TripResult result = buildTripResultFromRoute(route, transit_flags);
     if (result.stadiums.empty())
         return false;
 
@@ -455,18 +473,16 @@ bool TripPlanner::planShortestTripToTarget(int start_id, int target_id)
     }
     std::reverse(path.begin(), path.end());
 
-    TripResult result;
-    double total = 0.0;
-
-    for (size_t i = 0; i < path.size(); i++)
+    std::vector<bool> transit_flags(path.size(), true);
+    if (!transit_flags.empty())
     {
-        result.stadiums.push_back(getStadiumById(path[i]));
-        if (i > 0)
-            total += getDistance(path[i - 1], path[i]);
+        transit_flags.front() = false;
+        transit_flags.back() = false;
     }
 
-    result.total_distance = total;
-    result.total_cost = 0.0;
+    TripResult result = buildTripResultFromRoute(path, transit_flags);
+    if (result.stadiums.empty())
+        return false;
 
     _current_trip = std::make_unique<Trip>(result);
     return true;
@@ -483,9 +499,9 @@ bool TripPlanner::planVisitAllByNearestFrom(int start_id)
     if (!remaining.count(start_id))
         return false;
 
-    std::vector<int> route;
+    std::vector<int> visit_order;
     int current = start_id;
-    route.push_back(current);
+    visit_order.push_back(current);
     remaining.erase(current);
 
     while (!remaining.empty())
@@ -516,15 +532,18 @@ bool TripPlanner::planVisitAllByNearestFrom(int start_id)
             return false;
 
         for (size_t index = 1; index < path.size(); ++index)
-        {
-            route.push_back(path[index]);
             remaining.erase(path[index]);
-        }
 
-        current = route.back();
+        visit_order.push_back(best);
+        current = best;
     }
 
-    TripResult result = buildTripResultFromRoute(route);
+    std::vector<int> route;
+    std::vector<bool> transit_flags;
+    if (!buildAnnotatedRouteFromVisitOrder(visit_order, route, transit_flags))
+        return false;
+
+    TripResult result = buildTripResultFromRoute(route, transit_flags);
     if (result.stadiums.empty())
         return false;
 
@@ -595,6 +614,7 @@ bool TripPlanner::generateMSTResult()
         return false;
 
     TripResult result;
+    result.transit_flags.assign(mst_order.size(), false);
 
     for (int stadium_id : mst_order)
         result.stadiums.push_back(getStadiumById(stadium_id));
@@ -634,10 +654,11 @@ bool TripPlanner::generateDFSResultFrom(int start_id)
     }
 
     std::vector<int> route;
-    if (!buildRouteFromVisitOrder(order, route))
+    std::vector<bool> transit_flags;
+    if (!buildAnnotatedRouteFromVisitOrder(order, route, transit_flags))
         return false;
 
-    TripResult result = buildTripResultFromRoute(route);
+    TripResult result = buildTripResultFromRoute(route, transit_flags);
     if (result.stadiums.empty())
         return false;
 
@@ -672,10 +693,11 @@ bool TripPlanner::generateBFSResultFrom(int start_id)
     }
 
     std::vector<int> route;
-    if (!buildRouteFromVisitOrder(order, route))
+    std::vector<bool> transit_flags;
+    if (!buildAnnotatedRouteFromVisitOrder(order, route, transit_flags))
         return false;
 
-    TripResult result = buildTripResultFromRoute(route);
+    TripResult result = buildTripResultFromRoute(route, transit_flags);
     if (result.stadiums.empty())
         return false;
 

@@ -50,11 +50,15 @@ private:
         const std::unordered_map<int, int>& previous,
         std::vector<int>& path
         ) const;
-    bool buildRouteFromVisitOrder(
+    bool buildAnnotatedRouteFromVisitOrder(
         const std::vector<int>& visit_order,
-        std::vector<int>& route
+        std::vector<int>& route,
+        std::vector<bool>& transit_flags
         ) const;
-    TripResult buildTripResultFromRoute(const std::vector<int>& route) const;
+    TripResult buildTripResultFromRoute(
+        const std::vector<int>& route,
+        const std::vector<bool>& transit_flags
+        ) const;
     std::vector<int> getNeighborsSortedByDistance(int id) const;
 
 

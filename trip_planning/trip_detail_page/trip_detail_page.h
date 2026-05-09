@@ -3,6 +3,7 @@
 
 #include "../data_types.h"
 #include "../App/model/trip.h"
+#include <QObject>
 #include <QString>
 #include <QWidget>
 
@@ -44,6 +45,9 @@ private:
     void updateTripStopStyles();
     void updateStadiumSummary();
     void updateTripSummary();
+    QString buildCartSummaryText(bool include_trip_totals) const;
+    QString resolveStadiumName(int stadium_id) const;
+    void showCartSummary(const QString& title, bool close_after_showing);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -51,6 +55,7 @@ protected:
     Ui::TripDetailPage *_ui;
     Trip* _current_trip = nullptr;
     const std::vector<Stadium>* _all_stadiums = nullptr;
+    const std::vector<bool>* _transit_flags = nullptr;
     const Stadium* _current_stadium = nullptr;
     bool _has_current_stadium = false;
     bool _is_syncing_selection = false;
