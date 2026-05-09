@@ -57,6 +57,7 @@ TripDetailPage::TripDetailPage(QWidget *parent)
     if (!_current_trip)
     {
         updateStadiumSummary();
+        updateTripSummary();
         updateNavigationButtons();
         return;
     }
@@ -156,6 +157,7 @@ void TripDetailPage::syncFromCurrentTrip()
             QString("Stop 0 of %1").arg(_all_stadiums == nullptr ? 0 : static_cast<int>(_all_stadiums->size()))
             );
         updateStadiumSummary();
+        updateTripSummary();
         updateNavigationButtons();
         updateTripStopStyles();
         return;
@@ -174,6 +176,7 @@ void TripDetailPage::syncFromCurrentTrip()
     _is_syncing_selection = false;
 
     updateStadiumSummary();
+    updateTripSummary();
     updateNavigationButtons();
     updateTripStopStyles();
 }
@@ -364,4 +367,20 @@ void TripDetailPage::updateStadiumSummary()
     _ui->btnMoreInfo->setEnabled(true);
     loadSouvenirs();
     loadStadiumImage();
+}
+
+void TripDetailPage::updateTripSummary()
+{
+    if (_current_trip == nullptr)
+    {
+        _ui->lblTripSummary->setText("Total Distance: 0.0 mi | Total Cost: $0.00");
+        return;
+    }
+
+    const TripResult& result = _current_trip->getResult();
+    _ui->lblTripSummary->setText(
+        QString("Total Distance: %1 mi | Total Cost: $%2")
+            .arg(QString::number(result.total_distance, 'f', 1))
+            .arg(QString::number(result.total_cost, 'f', 2))
+        );
 }

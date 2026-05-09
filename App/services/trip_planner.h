@@ -37,7 +37,7 @@ public:
 
 private:
     double getDistance(int from_id, int to_id) const;
-    Stadium getStadiumById(int id);
+    Stadium getStadiumById(int id) const;
     bool computeShortestPaths(
         int start_id,
         std::unordered_map<int, double>& distances,

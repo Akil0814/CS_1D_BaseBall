@@ -107,7 +107,7 @@ double TripPlanner::getDistance(int from_id, int to_id) const
 // =====================================================
 // Helper: load Stadium by ID
 // =====================================================
-Stadium TripPlanner::getStadiumById(int id)
+Stadium TripPlanner::getStadiumById(int id) const
 {
     auto s = _repo.getStadiumByID(id);
     if (s.has_value())

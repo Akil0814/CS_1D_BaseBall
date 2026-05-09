@@ -114,7 +114,7 @@ std::vector<Stadium> StadiumRepository::getAllStadiums(StadiumSortBy sort_by,
     return tmp;
 }
 
-std::optional<Stadium> StadiumRepository::getStadiumByID(int stadium_id)
+std::optional<Stadium> StadiumRepository::getStadiumByID(int stadium_id) const
 {
     QSqlDatabase db = _db_manager.getDatabaseObj();
     if (!db.isValid() || !db.isOpen())

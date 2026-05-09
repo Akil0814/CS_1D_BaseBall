@@ -43,6 +43,7 @@ private:
     void updateNavigationButtons();
     void updateTripStopStyles();
     void updateStadiumSummary();
+    void updateTripSummary();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;

@@ -35,7 +35,7 @@ public:
                                         LeagueFilter league = LeagueFilter::All,
                                         bool browse_by_stadium = false) const;
 
-    std::optional<Stadium> getStadiumByID(int stadium_id);
+    std::optional<Stadium> getStadiumByID(int stadium_id) const;
     std::optional<Stadium> getStadiumByStadiumName(const QString& stadium_name);
     std::optional<Stadium> getStadiumByTeamName(const QString& team_name);
 
