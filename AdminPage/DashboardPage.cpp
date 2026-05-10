@@ -219,3 +219,19 @@ void DashboardPage::refreshConnections() {
     linkStadiumDB(db);
     linkSouvenirDB(db);
 }
+void DashboardPage::on_removeCampusButton_clicked()
+{
+    QModelIndex index = ui->stadiumList->currentIndex();
+
+    if (!index.isValid())
+        return; // nothing selected
+
+    int row = index.row();
+
+    int id = stadiumModel->data(stadiumModel->index(row, 0)).toInt();
+
+    APP->stadiumRepository()->deleteStadium(id);
+
+    stadiumModel->select();
+}
+
