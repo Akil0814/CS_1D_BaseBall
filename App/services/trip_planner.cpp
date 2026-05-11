@@ -176,7 +176,7 @@ bool TripPlanner::planCustomUnorderedEfficientTrip(
     route.push_back(current);
 
     qDebug() << "Starting stadium id:" << current;
-    qDebug() << "Selected targets:" << selected_targets;
+    qDebug() << "Selected targets:" << QList<int>(selected_targets.begin(), selected_targets.end());
 
     while (!remaining.empty())
     {
@@ -184,7 +184,7 @@ bool TripPlanner::planCustomUnorderedEfficientTrip(
         double best_dist = std::numeric_limits<double>::max();
 
         qDebug() << "Current stadium:" << current;
-        qDebug() << "Remaining targets:" << remaining;
+        qDebug() << "Remaining targets:" << QList<int>(remaining.begin(), remaining.end());
 
         for (int candidate : remaining)
         {

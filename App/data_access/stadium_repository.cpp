@@ -348,12 +348,12 @@ bool StadiumRepository::addStadium(const Stadium& new_staduim)
     q.addBindValue(new_staduim.roof_type);
     q.addBindValue(new_staduim.is_expansion ? 1 : 0);
 
-    // return q.exec();
-    if (!q.exec()) {
-        qDebug() << "Insert failed:" << q.lastError().text();
-        return false;
-    }
-    return true;
+    return q.exec();
+    // if (!q.exec()) {
+    //     qDebug() << "Insert failed:" << q.lastError().text();
+    //     return false;
+    // }
+    // return true;
 }
 
 bool StadiumRepository::upDateStadiumInform(int stadium_id, const Stadium& update_staduim)

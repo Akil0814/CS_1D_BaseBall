@@ -240,9 +240,9 @@ void DashboardPage::on_addStadiumButton_clicked() {
      if (dialog.exec() == QDialog::Accepted) {
          Stadium newStadium = dialog.getFormData();
 
-         qDebug() << APP->stadiumRepository()->addStadium(newStadium);
+         /*qDebug() << */APP->stadiumRepository()->addStadium(newStadium);
 
-         qDebug() << newStadium.league;
+         // qDebug() << newStadium.league;
 
          stadiumModel->select();
      }
