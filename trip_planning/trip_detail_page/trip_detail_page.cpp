@@ -87,24 +87,6 @@ void TripDetailPage::handleViewCartClick()
 
 void TripDetailPage::handleEndTripClick()
 {
-    if (_current_trip == nullptr)
-    {
-        close();
-        return;
-    }
-
-    const QMessageBox::StandardButton response = QMessageBox::question(
-        this,
-        "End Trip",
-        "End this trip and close the trip detail page?",
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No
-        );
-
-    if (response != QMessageBox::Yes)
-        return;
-
-    showCartSummary("Trip Summary", true);
 }
 
 void TripDetailPage::handlePreviousStopClick()
