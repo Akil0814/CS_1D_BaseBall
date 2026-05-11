@@ -13,8 +13,10 @@
 #include <QSqlTableModel>
 #include <souvenir_adding/newsouvenirpopup.h>
 
+#include "stadium_adding/stadium_adding.h"
 
-DashboardPage::DashboardPage(QWidget *parent) :
+
+ DashboardPage::DashboardPage(QWidget *parent) :
     QWidget(parent), ui(new Ui::DashboardPage) {
     ui->setupUi(this);
 
@@ -183,8 +185,6 @@ void DashboardPage::on_addSouvenirButton_clicked()
 
     return;
 }
-
-
 void DashboardPage::on_removeSouvenirButton_clicked()
 {
     QModelIndex index = ui->souvenirTableView->currentIndex();
@@ -219,3 +219,34 @@ void DashboardPage::refreshConnections() {
     linkStadiumDB(db);
     linkSouvenirDB(db);
 }
+
+void DashboardPage::on_removeStadiumButton_clicked()
+{
+    QModelIndex index = ui->stadiumList->currentIndex();
+
+    if (!index.isValid())
+        return; // nothing selected
+
+    int row = index.row();
+
+    int id = stadiumModel->data(stadiumModel->index(row, 0)).toInt();
+
+    APP->stadiumRepository()->deleteStadium(id);
+
+    stadiumModel->select();
+}
+void DashboardPage::on_addStadiumButton_clicked() {
+     StadiumAdding dialog(this);
+     if (dialog.exec() == QDialog::Accepted) {
+         Stadium newStadium = dialog.getFormData();
+
+         /*qDebug() << */APP->stadiumRepository()->addStadium(newStadium);
+
+         // qDebug() << newStadium.league;
+
+         stadiumModel->select();
+     }
+
+
+}
+
