@@ -697,45 +697,22 @@ bool TripPlanner::generateBFSResultFrom(int start_id)
 
     while (!q.empty())
     {
-        const size_t level_count = q.size();
-        std::vector<std::pair<int, double>> next_level_candidates;
+        int current = q.front();
+        q.pop();
+        order.push_back(current);
 
-        for (size_t level_index = 0; level_index < level_count; ++level_index)
+        for (int neighbor : getNeighborsSortedByDistance(current))
         {
-            int current = q.front();
-            q.pop();
-            order.push_back(current);
+            if (visited.count(neighbor))
+                continue;
 
-            for (int neighbor : getNeighborsSortedByDistance(current))
-            {
-                if (visited.count(neighbor))
-                    continue;
+            const double edge_distance = getDistance(current, neighbor);
+            if (edge_distance == std::numeric_limits<double>::max())
+                continue;
 
-                const double edge_distance = getDistance(current, neighbor);
-                if (edge_distance == std::numeric_limits<double>::max())
-                    continue;
-
-                next_level_candidates.push_back({neighbor, edge_distance});
-            }
-        }
-
-        std::sort(
-            next_level_candidates.begin(),
-            next_level_candidates.end(),
-            [](const auto& left, const auto& right) {
-                if (left.second == right.second)
-                    return left.first < right.first;
-
-                return left.second < right.second;
-            });
-
-        for (const auto& [neighbor, edge_distance] : next_level_candidates)
-        {
-            if (visited.insert(neighbor).second)
-            {
-                total_distance += edge_distance;
-                q.push(neighbor);
-            }
+            visited.insert(neighbor);
+            total_distance += edge_distance;
+            q.push(neighbor);
         }
     }
 
