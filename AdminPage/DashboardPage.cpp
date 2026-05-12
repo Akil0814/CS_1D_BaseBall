@@ -78,6 +78,8 @@ QWidget(parent), ui(new Ui::DashboardPage) {
 
     const QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
 
+    ui->detailsTabWidget->setCurrentIndex(0);
+
     setupComboBox();
     setupValidators();
     setupDetailsPanel();
