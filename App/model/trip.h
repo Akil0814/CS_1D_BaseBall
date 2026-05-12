@@ -17,7 +17,7 @@ public:
     Stadium* getCurrentStop();
     const Stadium* getCurrentStop() const;
 
-    ShoppingCart* getShoppingCart();
+    const ShoppingCart* getShoppingCart();
     const ShoppingCart* getShoppingCart() const;
     bool addSouvenirToCart(const Souvenir& souvenir, int quantity);
     bool removeCartItemAt(size_t index);
