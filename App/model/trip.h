@@ -3,6 +3,7 @@
 #include "shopping_cart.h"
 #include "../../data_types.h"
 
+#include <cstddef>
 
 class Trip
 {
@@ -18,6 +19,10 @@ public:
 
     ShoppingCart* getShoppingCart();
     const ShoppingCart* getShoppingCart() const;
+    bool addSouvenirToCart(const Souvenir& souvenir, int quantity);
+    bool removeCartItemAt(size_t index);
+    void clearShoppingCart();
+    double totalCost() const;
 
     bool hasStops() const;
     bool isAtFirstStop() const;

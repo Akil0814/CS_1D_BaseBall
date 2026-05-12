@@ -6,13 +6,69 @@
 
 #include "DashboardPage.h"
 
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QHash>
 #include <QSqlError>
 #include <QSqlRecord>
+#include <QStringList>
 #include "ui_DashboardPage.h"
 #include "App/application.h"
+#include "App/utils/csv_utils.h"
 #include <QSqlTableModel>
+#include <QMessageBox>
 #include <souvenir_adding/newsouvenirpopup.h>
 
+namespace
+{
+enum class CsvImportType
+{
+    Unknown,
+    Stadium,
+    Distance
+};
+
+CsvImportType detectCsvImportType(const QString& file_path)
+{
+    CsvUtils::Table csv;
+    QString csv_error;
+    if (!CsvUtils::readTable(file_path, csv, csv_error))
+        return CsvImportType::Unknown;
+
+    const QHash<QString, int> header_index = CsvUtils::buildHeaderIndex(csv.header);
+
+    const bool looks_like_stadium_csv =
+        CsvUtils::findHeaderIndex(header_index, { "team_name", "team" }) >= 0 &&
+        CsvUtils::findHeaderIndex(header_index, { "stadium_name", "stadium" }) >= 0;
+
+    const bool looks_like_distance_csv =
+        CsvUtils::findHeaderIndex(header_index,
+                                  { "originated_stadtium", "originated_stadium", "from_stadium", "from" }) >= 0 &&
+        CsvUtils::findHeaderIndex(header_index,
+                                  { "destination_stadtium", "destination_stadium", "to_stadium", "to" }) >= 0 &&
+        CsvUtils::findHeaderIndex(header_index, { "distance", "mileage", "miles" }) >= 0;
+
+    if (looks_like_stadium_csv)
+        return CsvImportType::Stadium;
+
+    if (looks_like_distance_csv)
+        return CsvImportType::Distance;
+
+    return CsvImportType::Unknown;
+}
+
+void appendImportMessage(QStringList& lines,
+                         const QString& prefix,
+                         const QString& file_name,
+                         const QString& detail = QString())
+{
+    QString line = prefix + file_name;
+    if (!detail.trimmed().isEmpty())
+        line += " - " + detail.trimmed();
+
+    lines.append(line);
+}
+}
 #include "stadium_adding/stadium_adding.h"
 
 
@@ -204,6 +260,101 @@ void DashboardPage::on_removeSouvenirButton_clicked()
     APP->souvenirRepository()->deleteSouvenir(id);
 
     souvenirModel->select();
+}
+
+void DashboardPage::on_uploadFile_clicked()
+{
+    if (APP == nullptr || APP->databaseManager() == nullptr)
+    {
+        QMessageBox::warning(this, "Import Files", "Database manager is not available.");
+        return;
+    }
+
+    const QStringList file_paths = QFileDialog::getOpenFileNames(
+        this,
+        "Select CSV Files to Import",
+        APP->assetsDir().trimmed().isEmpty() ? QString() : APP->assetsDir(),
+        "CSV Files (*.csv);;All Files (*.*)"
+        );
+
+    if (file_paths.isEmpty())
+        return;
+
+    QStringList stadium_files;
+    QStringList distance_files;
+    QStringList result_lines;
+
+    for (const QString& file_path : file_paths)
+    {
+        const CsvImportType import_type = detectCsvImportType(file_path);
+        const QString file_name = QFileInfo(file_path).fileName();
+
+        switch (import_type)
+        {
+        case CsvImportType::Stadium:
+            stadium_files.append(file_path);
+            break;
+        case CsvImportType::Distance:
+            distance_files.append(file_path);
+            break;
+        case CsvImportType::Unknown:
+        default:
+            appendImportMessage(
+                result_lines,
+                "Skipped unsupported file: ",
+                file_name,
+                "Header did not match stadium or distance import format."
+                );
+            break;
+        }
+    }
+
+    bool imported_anything = false;
+
+    auto import_files = [&](const QStringList& paths, bool is_stadium_import)
+    {
+        for (const QString& path : paths)
+        {
+            const QString file_name = QFileInfo(path).fileName();
+            const bool ok = is_stadium_import
+                ? APP->databaseManager()->importStadiumsFromFile(path)
+                : APP->databaseManager()->importDistancesFromFile(path);
+
+            const QString detail = ok
+                ? APP->databaseManager()->lastWarning()
+                : APP->databaseManager()->lastError();
+
+            appendImportMessage(
+                result_lines,
+                ok ? "Imported: " : "Failed: ",
+                file_name,
+                detail
+                );
+
+            if (ok)
+                imported_anything = true;
+        }
+    };
+
+    import_files(stadium_files, true);
+    import_files(distance_files, false);
+
+    if (imported_anything)
+    {
+        refreshConnections();
+        if (stadiumModel != nullptr)
+            stadiumModel->select();
+        if (souvenirModel != nullptr)
+            souvenirModel->select();
+    }
+
+    QMessageBox message_box(this);
+    message_box.setWindowTitle("Import Files");
+    message_box.setIcon(imported_anything ? QMessageBox::Information : QMessageBox::Warning);
+    message_box.setText(result_lines.isEmpty()
+                            ? "No importable files were selected."
+                            : result_lines.join('\n'));
+    message_box.exec();
 }
 
 void DashboardPage::refreshConnections() {

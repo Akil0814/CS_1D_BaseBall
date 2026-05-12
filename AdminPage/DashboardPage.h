@@ -32,6 +32,9 @@ public:
 private slots:
     void on_addSouvenirButton_clicked();
     void on_removeSouvenirButton_clicked();
+
+    void on_uploadFile_clicked();
+
     void refreshConnections();
     void on_removeStadiumButton_clicked();
     void on_addStadiumButton_clicked();

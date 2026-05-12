@@ -60,6 +60,7 @@ struct TripStops
 struct TripResult
 {
 	std::vector<Stadium> stadiums;
+	std::vector<bool> transit_flags;
 	double total_distance = 0.0;
 	double total_cost = 0.0;
 };

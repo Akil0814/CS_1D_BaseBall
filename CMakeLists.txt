@@ -27,6 +27,8 @@ set(PROJECT_SOURCES
     trip_planning/trip_detail_page/trip_detail_page.h
     trip_planning/trip_detail_page/trip_detail_page.cpp
     trip_planning/trip_detail_page/trip_detail_page.ui
+    trip_planning/cart_page/cart_page.h
+    trip_planning/cart_page/cart_page.cpp
     AdminPage/AdminPage.cpp
     AdminPage/AdminPage.h
     AdminPage/AdminPage.ui
