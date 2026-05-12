@@ -25,9 +25,7 @@ int main(int argc, char *argv[])
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
-    StadiumAdding adding;
 
-    adding.show();
     // TripDetailPage detail;
     //detail.show();
     //test();

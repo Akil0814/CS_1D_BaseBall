@@ -32,10 +32,13 @@ public:
 private slots:
     void on_addSouvenirButton_clicked();
     void on_removeSouvenirButton_clicked();
-
-void refreshConnections();
+    void refreshConnections();
     void on_removeStadiumButton_clicked();
     void on_addStadiumButton_clicked();
+    void setupComboBox();
+    void setupValidators();
+    void setupDetailsPanel();
+    void updateField(int columnIdx, const QVariant &value);
 
 private:
     Ui::DashboardPage *ui;

@@ -6,14 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>993</width>
+    <height>559</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>DashboardPage</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QGridLayout" name="gridLayout_3"/>
+   </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop">
@@ -130,31 +133,28 @@
      <item row="2" column="2">
       <layout class="QVBoxLayout" name="rightSide">
        <item>
-        <layout class="QHBoxLayout" name="stadiumNameContainer">
-         <item>
-          <widget class="QLabel" name="stadiumName">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-             <bold>false</bold>
-             <kerning>true</kerning>
-            </font>
-           </property>
-           <property name="text">
-            <string>Stadium Name</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="stadiumNameLineEdit"/>
-         </item>
-        </layout>
+        <layout class="QHBoxLayout" name="stadiumNameContainer"/>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="souvenirContainer">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
+        <widget class="QTabWidget" name="tabWidget">
+         <property name="currentIndex">
+          <number>1</number>
+         </property>
+         <widget class="QWidget" name="tab">
+          <attribute name="title">
+           <string>Tab 1</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <property name="leftMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>12</number>
+           </property>
+           <property name="bottomMargin">
+            <number>12</number>
+           </property>
+           <item row="0" column="0">
             <widget class="QLabel" name="label_5">
              <property name="font">
               <font>
@@ -167,7 +167,7 @@
              </property>
             </widget>
            </item>
-           <item>
+           <item row="0" column="1">
             <widget class="QPushButton" name="addSouvenirButton">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -202,7 +202,7 @@
              </property>
             </widget>
            </item>
-           <item>
+           <item row="0" column="2">
             <widget class="QPushButton" name="removeSouvenirButton">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -237,23 +237,156 @@
              </property>
             </widget>
            </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QTableView" name="souvenirTableView">
-           <property name="styleSheet">
-            <string notr="true">QTableView::item {
+           <item row="1" column="0" colspan="3">
+            <widget class="QTableView" name="souvenirTableView">
+             <property name="styleSheet">
+              <string notr="true">QTableView::item {
     padding-left: 5px;
 
 }</string>
-           </property>
-           <property name="editTriggers">
-            <set>QAbstractItemView::EditTrigger::DoubleClicked</set>
-           </property>
-           <attribute name="verticalHeaderVisible">
-            <bool>false</bool>
-           </attribute>
-          </widget>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::EditTrigger::DoubleClicked</set>
+             </property>
+             <attribute name="verticalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab_2">
+          <attribute name="title">
+           <string>Tab 2</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <item row="0" column="0">
+            <widget class="QLabel" name="stadiumName">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+               <bold>false</bold>
+               <kerning>true</kerning>
+              </font>
+             </property>
+             <property name="text">
+              <string>Stadium Name</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="2">
+            <widget class="QLineEdit" name="stadiumNameLineEdit"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="teamNamePriceLabel">
+             <property name="text">
+              <string>Team Name</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1" colspan="2">
+            <widget class="QLineEdit" name="teamNameLineEdit"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="seatingCapacityLabel">
+             <property name="text">
+              <string>Seating Capacity</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="locationLabel">
+             <property name="text">
+              <string>Location</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1" colspan="2">
+            <widget class="QLineEdit" name="locationLineEdit"/>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="surfaceLabel">
+             <property name="text">
+              <string>Playing Surface</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1" colspan="2">
+            <widget class="QComboBox" name="surfaceComboBox"/>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="leagueLabel">
+             <property name="text">
+              <string>League</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="dateOpenedLabel">
+             <property name="text">
+              <string>Date Opened</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="centerFieldLabel">
+             <property name="text">
+              <string>Distance to Center Field</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="typologyLabel">
+             <property name="text">
+              <string>Ballpark Typology</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="roofLabel">
+             <property name="text">
+              <string>Roof Type</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1" colspan="2">
+            <widget class="QComboBox" name="leagueComboBox"/>
+           </item>
+           <item row="8" column="1" colspan="2">
+            <widget class="QComboBox" name="typologyComboBox"/>
+           </item>
+           <item row="9" column="1" colspan="2">
+            <widget class="QComboBox" name="roofComboBox"/>
+           </item>
+           <item row="7" column="1" colspan="2">
+            <widget class="QSpinBox" name="centerFieldSpinBox">
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1" colspan="2">
+            <widget class="QSpinBox" name="dateOpenedSpinBox">
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1" colspan="2">
+            <widget class="QSpinBox" name="seatingCapacitySpinBox">
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="souvenirContainer">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5"/>
          </item>
         </layout>
        </item>

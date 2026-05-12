@@ -16,16 +16,21 @@
 #include "stadium_adding/stadium_adding.h"
 
 
- DashboardPage::DashboardPage(QWidget *parent) :
-    QWidget(parent), ui(new Ui::DashboardPage) {
+DashboardPage::DashboardPage(QWidget *parent) :
+QWidget(parent), ui(new Ui::DashboardPage) {
     ui->setupUi(this);
 
     const QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
 
+    setupComboBox();
+    setupValidators();
+    setupDetailsPanel();
+
+
     refreshConnections();
 
     connect(APP->databaseManager(), &DatabaseManager::databaseReset,
-            this, &DashboardPage::refreshConnections);
+        this, &DashboardPage::refreshConnections);
 }
 
 DashboardPage::~DashboardPage() {
@@ -246,7 +251,137 @@ void DashboardPage::on_addStadiumButton_clicked() {
 
          stadiumModel->select();
      }
-
-
 }
 
+void DashboardPage::setupComboBox() {
+     // Add leagues
+     ui->leagueComboBox->addItem("National");
+     ui->leagueComboBox->addItem("American");
+
+     // Add ballpark typology
+     ui->typologyComboBox->addItem("Retro Modern");
+     ui->typologyComboBox->addItem("Retro Classic");
+     ui->typologyComboBox->addItem("Jewel Box");
+     ui->typologyComboBox->addItem("Modern");
+     ui->typologyComboBox->addItem("Contemporary");
+     ui->typologyComboBox->addItem("Multipurpose");
+
+     // Add playing surfaces
+     ui->surfaceComboBox->addItem("Grass");
+     ui->surfaceComboBox->addItem("AstroTurf GameDay Grass");
+     ui->surfaceComboBox->addItem("AstroTurf GameDay Grass 3D");
+
+     // Add roof type
+     ui->roofComboBox->addItem("Open");
+     ui->roofComboBox->addItem("Retractable");
+}
+void DashboardPage::setupValidators() {
+    // Regex for Names and Locations
+    QRegularExpression nameRegex("^[a-zA-Z\\s\\-–'.]{1,100}$");
+    QRegularExpression locRegex("^[a-zA-Z\\s,\\.\\-]{1,1000}$");
+
+    QRegularExpressionValidator *nameValidator = new QRegularExpressionValidator(nameRegex, this);
+    QRegularExpressionValidator *locValidator = new QRegularExpressionValidator(locRegex, this);
+
+    // Assign to widgets
+    ui->stadiumNameLineEdit->setValidator(nameValidator);
+    ui->teamNameLineEdit->setValidator(nameValidator);
+    ui->locationLineEdit->setValidator(locValidator);
+
+    // SpinBox Ranges
+    ui->seatingCapacitySpinBox->setRange(0, 200000);
+    ui->dateOpenedSpinBox->setRange(1800, 2100);
+
+    // Unified Styling Logic
+    QList<QLineEdit*> lineEdits = {ui->stadiumNameLineEdit, ui->teamNameLineEdit, ui->locationLineEdit};
+    for (QLineEdit* edit : lineEdits) {
+        connect(edit, &QLineEdit::textChanged, [edit]() {
+            if (edit->hasAcceptableInput() || edit->text().isEmpty()) {
+                edit->setStyleSheet("");
+            } else {
+                edit->setStyleSheet("border: 1px solid red; background-color: #FFF0F0;");
+            }
+        });
+    }
+}
+void DashboardPage::setupDetailsPanel() {
+    ui->centerFieldSpinBox->setMaximum(1000000); // Sets the max to 1,000,000
+
+    // 1. SYNC FROM LIST TO WIDGETS
+    connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
+        QSqlRecord record = stadiumModel->record(index.row());
+
+        // Sync LineEdits
+        ui->stadiumNameLineEdit->setText(record.value("stadium_name").toString());
+        ui->teamNameLineEdit->setText(record.value("team_name").toString());
+        ui->locationLineEdit->setText(record.value("location").toString());
+
+        // Sync ComboBoxes (Sets by string match)
+        ui->leagueComboBox->setCurrentText(record.value("league").toString());
+        ui->typologyComboBox->setCurrentText(record.value("ballpark_typology").toString());
+        ui->surfaceComboBox->setCurrentText(record.value("playing_surface").toString());
+        ui->roofComboBox->setCurrentText(record.value("roof_type").toString());
+
+        // Sync SpinBoxes
+        ui->seatingCapacitySpinBox->setValue(record.value("seating_capacity").toInt());
+        ui->dateOpenedSpinBox->setValue(record.value("date_opened").toInt());
+        ui->centerFieldSpinBox->setValue(record.value("distance_to_center_field_ft").toInt());
+    });
+
+    // 2. SYNC FROM WIDGETS TO DATABASE (Update on Enter/Change)
+
+    // Example: Team Name Update (Column 1)
+    connect(ui->teamNameLineEdit, &QLineEdit::returnPressed, this, [this]() {
+        updateField(1, ui->teamNameLineEdit->text());
+    });
+
+    // Example: Location Update (Column 4)
+    connect(ui->locationLineEdit, &QLineEdit::returnPressed, this, [this]() {
+        updateField(4, ui->locationLineEdit->text());
+    });
+
+    // Example: League Update (ComboBox)
+    connect(ui->leagueComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
+        updateField(6, text);
+    });
+    // Example: Surface Update (ComboBox)
+    connect(ui->surfaceComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
+        updateField(5, text);
+    });
+    // Example: topology Update (ComboBox)
+    connect(ui->typologyComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
+        updateField(10, text);
+    });
+    // Example: roof type Update (ComboBox)
+    connect(ui->roofComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
+        updateField(11, text);
+    });
+
+
+    // SPINBOXES
+    // Example: Capacity Update (SpinBox)
+    void (QSpinBox::*valueChanged)(int) = &QSpinBox::valueChanged;
+    connect(ui->seatingCapacitySpinBox, valueChanged, this, [this](int value) {
+        updateField(3, value);
+    });
+    // Example: Date Opened Update (SpinBox)
+    connect(ui->dateOpenedSpinBox, valueChanged, this, [this](int value) {
+        updateField(7, value);
+    });
+    // Example: Centerfield Update (SpinBox)
+    connect(ui->centerFieldSpinBox, valueChanged, this, [this](int value) {
+        updateField(8, value);
+    });
+}
+void DashboardPage::updateField(int columnIdx, const QVariant &value) {
+    QModelIndex currentIndex = ui->stadiumList->currentIndex();
+    if (currentIndex.isValid()) {
+        QModelIndex targetIndex = stadiumModel->index(currentIndex.row(), columnIdx);
+        if (stadiumModel->setData(targetIndex, value)) {
+            stadiumModel->submitAll();
+            qDebug() << "Column" << columnIdx << "updated successfully.";
+        } else {
+            qDebug() << "Update failed:" << stadiumModel->lastError().text();
+        }
+    }
+}
