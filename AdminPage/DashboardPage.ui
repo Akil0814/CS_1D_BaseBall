@@ -142,7 +142,7 @@
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
-           <string>Tab 1</string>
+           <string>Souvenirs</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_2">
            <property name="leftMargin">
@@ -257,7 +257,7 @@
          </widget>
          <widget class="QWidget" name="tab_2">
           <attribute name="title">
-           <string>Tab 2</string>
+           <string>Stadium Details</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_4">
            <item row="0" column="0">
