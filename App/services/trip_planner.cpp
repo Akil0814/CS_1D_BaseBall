@@ -5,11 +5,9 @@
 #include <limits>
 #include <algorithm>
 #include <queue>
-#include <stack>
 #include <unordered_set>
 #include <unordered_map>
 #include <functional>
-#include <QSqlError>
 
 // =====================================================
 // Constructor
@@ -69,10 +67,7 @@ double TripPlanner::getDistance(int from_id, int to_id) const
     QSqlDatabase db = _repo.getDatabaseManager().getDatabaseObj();
 
     if (!db.isOpen())
-    {
-        qDebug() << "DB NOT OPEN";
         return std::numeric_limits<double>::max();
-    }
 
     int a = std::min(from_id, to_id);
     int b = std::max(from_id, to_id);
@@ -88,19 +83,11 @@ double TripPlanner::getDistance(int from_id, int to_id) const
     q.addBindValue(b);
 
     if (!q.exec())
-    {
-        qDebug() << "QUERY FAILED:" << q.lastError();
         return std::numeric_limits<double>::max();
-    }
 
     if (q.next())
-    {
-        double d = q.value(0).toDouble();
-        qDebug() << "DIST:" << a << "->" << b << "=" << d;
-        return d;
-    }
+        return q.value(0).toDouble();
 
-    qDebug() << "NO RESULT FOR:" << a << b;
     return std::numeric_limits<double>::max();
 }
 
@@ -274,6 +261,36 @@ TripResult TripPlanner::buildTripResultFromRoute(
     result.total_distance = total;
     result.total_cost = 0.0;
     return result;
+}
+
+bool TripPlanner::buildTripResultFromVisitOrder(
+    const std::vector<int>& visit_order,
+    double total_distance,
+    TripResult& result
+    ) const
+{
+    result = TripResult{};
+
+    if (visit_order.empty())
+        return false;
+
+    result.transit_flags.assign(visit_order.size(), false);
+
+    for (int stadium_id : visit_order)
+    {
+        Stadium stadium = getStadiumById(stadium_id);
+        if (stadium.stadium_id <= 0)
+        {
+            result = TripResult{};
+            return false;
+        }
+
+        result.stadiums.push_back(stadium);
+    }
+
+    result.total_distance = total_distance;
+    result.total_cost = 0.0;
+    return true;
 }
 
 std::vector<int> TripPlanner::getNeighborsSortedByDistance(int id) const
@@ -628,38 +645,36 @@ bool TripPlanner::generateMSTResult()
 
 bool TripPlanner::generateDFSResultFrom(int start_id)
 {
+    const auto all_ids = getAllStadiumIds();
+    if (std::find(all_ids.begin(), all_ids.end(), start_id) == all_ids.end())
+        return false;
+
     std::unordered_set<int> visited;
     std::vector<int> order;
-    std::stack<int> st;
+    double total_distance = 0.0;
 
-    st.push(start_id);
-
-    while (!st.empty())
-    {
-        int current = st.top();
-        st.pop();
-
-        if (visited.count(current))
-            continue;
-
+    std::function<void(int)> dfs = [&](int current) {
         visited.insert(current);
         order.push_back(current);
 
-        const std::vector<int> neighbors = getNeighborsSortedByDistance(current);
-        for (auto it = neighbors.rbegin(); it != neighbors.rend(); ++it)
+        for (int neighbor : getNeighborsSortedByDistance(current))
         {
-            if (!visited.count(*it))
-                st.push(*it);
+            if (!visited.count(neighbor))
+            {
+                const double edge_distance = getDistance(current, neighbor);
+                if (edge_distance == std::numeric_limits<double>::max())
+                    continue;
+
+                total_distance += edge_distance;
+                dfs(neighbor);
+            }
         }
-    }
+    };
 
-    std::vector<int> route;
-    std::vector<bool> transit_flags;
-    if (!buildAnnotatedRouteFromVisitOrder(order, route, transit_flags))
-        return false;
+    dfs(start_id);
 
-    TripResult result = buildTripResultFromRoute(route, transit_flags);
-    if (result.stadiums.empty())
+    TripResult result;
+    if (!buildTripResultFromVisitOrder(order, total_distance, result))
         return false;
 
     _current_trip = std::make_unique<Trip>(result);
@@ -668,37 +683,64 @@ bool TripPlanner::generateDFSResultFrom(int start_id)
 
 bool TripPlanner::generateBFSResultFrom(int start_id)
 {
+    const auto all_ids = getAllStadiumIds();
+    if (std::find(all_ids.begin(), all_ids.end(), start_id) == all_ids.end())
+        return false;
+
     std::unordered_set<int> visited;
     std::queue<int> q;
     std::vector<int> order;
+    double total_distance = 0.0;
 
     q.push(start_id);
     visited.insert(start_id);
 
     while (!q.empty())
     {
-        int current = q.front();
-        q.pop();
+        const size_t level_count = q.size();
+        std::vector<std::pair<int, double>> next_level_candidates;
 
-        order.push_back(current);
-
-        for (int neighbor : getNeighborsSortedByDistance(current))
+        for (size_t level_index = 0; level_index < level_count; ++level_index)
         {
-            if (!visited.count(neighbor))
+            int current = q.front();
+            q.pop();
+            order.push_back(current);
+
+            for (int neighbor : getNeighborsSortedByDistance(current))
             {
-                visited.insert(neighbor);
+                if (visited.count(neighbor))
+                    continue;
+
+                const double edge_distance = getDistance(current, neighbor);
+                if (edge_distance == std::numeric_limits<double>::max())
+                    continue;
+
+                next_level_candidates.push_back({neighbor, edge_distance});
+            }
+        }
+
+        std::sort(
+            next_level_candidates.begin(),
+            next_level_candidates.end(),
+            [](const auto& left, const auto& right) {
+                if (left.second == right.second)
+                    return left.first < right.first;
+
+                return left.second < right.second;
+            });
+
+        for (const auto& [neighbor, edge_distance] : next_level_candidates)
+        {
+            if (visited.insert(neighbor).second)
+            {
+                total_distance += edge_distance;
                 q.push(neighbor);
             }
         }
     }
 
-    std::vector<int> route;
-    std::vector<bool> transit_flags;
-    if (!buildAnnotatedRouteFromVisitOrder(order, route, transit_flags))
-        return false;
-
-    TripResult result = buildTripResultFromRoute(route, transit_flags);
-    if (result.stadiums.empty())
+    TripResult result;
+    if (!buildTripResultFromVisitOrder(order, total_distance, result))
         return false;
 
     _current_trip = std::make_unique<Trip>(result);

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "../model/trip.h"
@@ -58,6 +59,11 @@ private:
     TripResult buildTripResultFromRoute(
         const std::vector<int>& route,
         const std::vector<bool>& transit_flags
+        ) const;
+    bool buildTripResultFromVisitOrder(
+        const std::vector<int>& visit_order,
+        double total_distance,
+        TripResult& result
         ) const;
     std::vector<int> getNeighborsSortedByDistance(int id) const;
 

@@ -1,11 +1,11 @@
 #include <QCoreApplication>
-#include <QDebug>
 #include <iostream>
 
 #include "../application.h"
 #include "../services/trip_planner.h"
 
 using std::cin;
+using std::cerr;
 using std::cout;
 using std::endl;
 
@@ -16,20 +16,31 @@ void printTrip(Trip* trip)
 {
     if (!trip)
     {
-        qDebug() << "Trip is NULL!";
+        cerr << "Trip is NULL!" << endl;
         return;
     }
 
     const TripResult& result = trip->getResult();
 
-    qDebug() << "\n==== TRIP RESULT ====";
+    cout << "\n==== TRIP RESULT ====\n";
 
-    for (const auto& stadium : result.stadiums)
+    for (size_t index = 0; index < result.stadiums.size(); ++index)
     {
-        qDebug() << "Stadium ID:" << stadium.stadium_id;
+        const Stadium& stadium = result.stadiums[index];
+        const bool is_transit =
+            index < result.transit_flags.size() && result.transit_flags[index];
+
+        cout << index + 1 << ". "
+             << stadium.stadium_name.toStdString()
+             << " [ID: " << stadium.stadium_id << "]";
+
+        if (is_transit)
+            cout << " (Transit)";
+
+        cout << '\n';
     }
 
-    qDebug() << "Total distance:" << result.total_distance;
+    cout << "Total distance: " << result.total_distance << '\n';
 }
 
 // ===============================
@@ -39,32 +50,38 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    qDebug() << "===== CLI TEST START =====";
+    cout << "===== CLI TEST START =====\n";
 
     // Get Application singleton
     Application* core = Application::instance();
 
     if (!core)
     {
-        qDebug() << "Application instance is NULL!";
+        cerr << "Application instance is NULL!" << endl;
         return -1;
     }
 
     if (!core->init())
     {
-        qDebug() << "Application init failed:" << core->lastError();
+        cerr << "Application init failed: "
+             << core->lastError().toStdString()
+             << endl;
         return -1;
     }
 
-    qDebug() << "TripPlanner available:" << core->isTripPlannerAvailable();
-    qDebug() << "Warning:" << core->lastWarning();
+    cout << "TripPlanner available: "
+         << (core->isTripPlannerAvailable() ? "true" : "false")
+         << '\n';
+
+    if (!core->lastWarning().isEmpty())
+        cout << "Warning: " << core->lastWarning().toStdString() << '\n';
 
     // IMPORTANT: use getTripPlanner()
     TripPlanner* planner = core->getTripPlanner();
 
     if (!planner)
     {
-        qDebug() << "TripPlanner is NULL!";
+        cerr << "TripPlanner is NULL!" << endl;
         return -1;
     }
 
@@ -104,7 +121,7 @@ int main(int argc, char *argv[])
             if (planner->planShortestTripToTarget(start, target))
                 printTrip(planner->getCurrentTrip());
             else
-                qDebug() << "Failed shortest path";
+                cerr << "Failed shortest path" << endl;
         }
         else if (choice == 3)
         {
@@ -116,7 +133,7 @@ int main(int argc, char *argv[])
             if (planner->planVisitAllByNearestFrom(start))
                 printTrip(planner->getCurrentTrip());
             else
-                qDebug() << "Failed visit-all";
+                cerr << "Failed visit-all" << endl;
         }
         else if (choice == 4)
         {
@@ -128,7 +145,7 @@ int main(int argc, char *argv[])
             if (planner->generateDFSResultFrom(start))
                 printTrip(planner->getCurrentTrip());
             else
-                qDebug() << "DFS failed";
+                cerr << "DFS failed" << endl;
         }
         else if (choice == 5)
         {
@@ -140,7 +157,7 @@ int main(int argc, char *argv[])
             if (planner->generateBFSResultFrom(start))
                 printTrip(planner->getCurrentTrip());
             else
-                qDebug() << "BFS failed";
+                cerr << "BFS failed" << endl;
         }
         else if (choice == 6)
         {
