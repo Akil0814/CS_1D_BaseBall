@@ -36,7 +36,6 @@ private slots:
     void on_uploadFile_clicked();
 
     void refreshConnections();
-    void refreshConnections();
     void on_removeStadiumButton_clicked();
     void on_addStadiumButton_clicked();
     void setupComboBox();
