@@ -52,7 +52,7 @@ const Stadium* Trip::getCurrentStop() const
     return &_all_trip_stop.stadiums[_current_stop_index];
 }
 
-ShoppingCart* Trip::getShoppingCart()
+const ShoppingCart* Trip::getShoppingCart()
 {
     return &_cart;
 }

@@ -1,6 +1,15 @@
 #include "shopping_cart.h"
 
+#include <cmath>
 #include <cstddef>
+
+namespace
+{
+bool pricesMatch(double left, double right)
+{
+    return std::fabs(left - right) < 0.0001;
+}
+}
 
 ShoppingCart::ShoppingCart() {}
 
@@ -14,12 +23,21 @@ bool ShoppingCart::addItem(const Souvenir& souvenir, int quantity)
         const bool same_souvenir_id =
             souvenir.souvenir_id > 0 &&
             cart_item.item_souvenir.souvenir_id == souvenir.souvenir_id;
-        const bool same_fallback_identity =
+        const bool same_snapshot_identity =
             cart_item.item_souvenir.owner_stadium_id == souvenir.owner_stadium_id &&
             cart_item.item_souvenir.name == souvenir.name &&
-            cart_item.item_souvenir.price == souvenir.price;
+            pricesMatch(cart_item.item_souvenir.price, souvenir.price);
 
-        if (same_souvenir_id || same_fallback_identity)
+        if (!same_souvenir_id && !same_snapshot_identity)
+            continue;
+
+        // Preserve the original purchase price in the cart. If the admin updates
+        // a souvenir price mid-trip, a later purchase should become a new line item
+        // instead of silently rewriting the earlier purchases to the new price.
+        if (!same_snapshot_identity)
+            continue;
+
+        if (same_souvenir_id || same_snapshot_identity)
         {
             cart_item.quantity += quantity;
             return true;
