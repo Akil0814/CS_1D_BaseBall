@@ -15,9 +15,6 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QGridLayout" name="gridLayout_3"/>
-   </item>
-   <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop">
       <widget class="QLabel" name="label_2">
@@ -132,7 +129,7 @@
         <layout class="QHBoxLayout" name="stadiumNameContainer"/>
        </item>
        <item>
-        <widget class="QTabWidget" name="tabWidget">
+        <widget class="QTabWidget" name="detailsTabWidget">
          <property name="currentIndex">
           <number>2</number>
          </property>
@@ -173,14 +170,14 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>30</width>
+               <width>35</width>
                <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
-               <width>30</width>
-               <height>30</height>
+               <width>35</width>
+               <height>35</height>
               </size>
              </property>
              <property name="styleSheet">
@@ -189,8 +186,6 @@
 	font: bold;
 	font-size: 10pt;
 	text-align: center;
-	padding: 0px;
-    margin: 0px;
 }</string>
              </property>
              <property name="text">
@@ -208,14 +203,14 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>30</width>
+               <width>35</width>
                <height>30</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
-               <width>30</width>
-               <height>30</height>
+               <width>35</width>
+               <height>35</height>
               </size>
              </property>
              <property name="styleSheet">
@@ -224,8 +219,6 @@
 	font: bold;
 	font-size: 10pt;
 	text-align: center;
-	padding: 0px;
-    margin: 0px;
 }</string>
              </property>
              <property name="text">
