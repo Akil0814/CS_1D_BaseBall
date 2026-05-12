@@ -59,14 +59,14 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>30</width>
+             <width>35</width>
              <height>30</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>30</width>
-             <height>30</height>
+             <width>35</width>
+             <height>35</height>
             </size>
            </property>
            <property name="styleSheet">
@@ -75,8 +75,6 @@
 	font: bold;
 	font-size: 10pt;
 	text-align: center;
-	padding: 0px;
-    margin: 0px;
 }</string>
            </property>
            <property name="text">
@@ -94,14 +92,14 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>30</width>
+             <width>35</width>
              <height>30</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>30</width>
-             <height>30</height>
+             <width>35</width>
+             <height>35</height>
             </size>
            </property>
            <property name="styleSheet">
@@ -110,8 +108,6 @@
 	font: bold;
 	font-size: 10pt;
 	text-align: center;
-	padding: 0px;
-    margin: 0px;
 }</string>
            </property>
            <property name="text">
@@ -138,7 +134,7 @@
        <item>
         <widget class="QTabWidget" name="tabWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
@@ -380,6 +376,11 @@
             </widget>
            </item>
           </layout>
+         </widget>
+         <widget class="QWidget" name="tab_3">
+          <attribute name="title">
+           <string>Distances</string>
+          </attribute>
          </widget>
         </widget>
        </item>
