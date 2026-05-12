@@ -53,12 +53,16 @@ set(PROJECT_SOURCES
     detail_window/detail_window.cpp
     detail_window/detail_window.h
     detail_window/detail_window.ui
+
+
+
 )
 
 if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     qt_add_executable(CS_1D_BaseBall
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+            AdminPage/stadium_adding/stadium_adding.h AdminPage/stadium_adding/stadium_adding.cpp AdminPage/stadium_adding/stadium_adding.ui
     )
 else()
     add_executable(CS_1D_BaseBall ${PROJECT_SOURCES})

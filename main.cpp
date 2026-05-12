@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "main_window.h"
+#include "AdminPage/stadium_adding/stadium_adding.h"
 #include "AdminPage/AdminPage.h"
 #include "AdminPage/DashboardPage.h"
 #include "AdminPage/LoginPage.h"
@@ -24,7 +25,8 @@ int main(int argc, char *argv[])
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
-    TripDetailPage detail;
+
+    // TripDetailPage detail;
     //detail.show();
     //test();
 
