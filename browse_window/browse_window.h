@@ -26,6 +26,10 @@ private:
     bool isBrowsingByStadium() const;
     void openDetailWindowForSelectedRow();
 
+    bool isSeatCapacitySort() const;
+    void setHeaders();
+    QString stadiumValueForColumn(const Stadium& s, int dataColumnIndex) const;
+
 private:
     Ui::browse_window *ui;
     std::vector<Stadium> stadiums;

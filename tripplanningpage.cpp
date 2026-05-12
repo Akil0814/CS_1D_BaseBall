@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QMessageBox>
+#include <QListWidgetItem>
 #include <vector>
 #include <algorithm>
 
@@ -68,26 +69,39 @@ void TripPlanningPage::loadStadiumAndTeamData()
 
     for (const auto& stadium : stadiums)
     {
-        ui->cmbStartStadium->addItem(stadium.stadium_name, stadium.stadium_id);
-        ui->cmbTargetTeam->addItem(stadium.team_name, stadium.stadium_id);
-        ui->listAvailableTeams->addItem(stadium.team_name);
+        QString displayText = stadium.team_name + " / " + stadium.stadium_name;
+
+        // Start combo stays as stadium name only
+        ui->cmbStartStadium->addItem(displayText, stadium.stadium_id);
+
+        // Target combo shows team / stadium
+        ui->cmbTargetTeam->addItem(displayText, stadium.stadium_id);
+
+        // Available list shows team / stadium and stores stadium_id
+        QListWidgetItem *item = new QListWidgetItem(displayText);
+        item->setData(Qt::UserRole, stadium.stadium_id);
+        ui->listAvailableTeams->addItem(item);
     }
 }
+
 void TripPlanningPage::addSelectedTeam()
 {
     QListWidgetItem *currentItem = ui->listAvailableTeams->currentItem();
     if (!currentItem)
         return;
 
-    QString teamName = currentItem->text();
+    int stadiumId = currentItem->data(Qt::UserRole).toInt();
+    QString displayText = currentItem->text();
 
     for (int i = 0; i < ui->listSelectedTeams->count(); ++i)
     {
-        if (ui->listSelectedTeams->item(i)->text() == teamName)
+        if (ui->listSelectedTeams->item(i)->data(Qt::UserRole).toInt() == stadiumId)
             return;
     }
 
-    ui->listSelectedTeams->addItem(teamName);
+    QListWidgetItem *newItem = new QListWidgetItem(displayText);
+    newItem->setData(Qt::UserRole, stadiumId);
+    ui->listSelectedTeams->addItem(newItem);
 }
 
 void TripPlanningPage::removeSelectedTeam()
@@ -199,16 +213,7 @@ std::vector<int> TripPlanningPage::getSelectedTeamIds() const
 
     for (int i = 0; i < ui->listSelectedTeams->count(); ++i)
     {
-        QString teamName = ui->listSelectedTeams->item(i)->text();
-
-        for (int j = 0; j < ui->cmbTargetTeam->count(); ++j)
-        {
-            if (ui->cmbTargetTeam->itemText(j) == teamName)
-            {
-                ids.push_back(ui->cmbTargetTeam->itemData(j).toInt());
-                break;
-            }
-        }
+        ids.push_back(ui->listSelectedTeams->item(i)->data(Qt::UserRole).toInt());
     }
 
     return ids;

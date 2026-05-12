@@ -24,7 +24,7 @@ BrowseWindow::BrowseWindow(QWidget *parent)
     loadBrowseTable();
 
     connect(ui->btnBackToMain, &QPushButton::clicked, this, [this]() {
-        this->close();
+        close();
     });
 
     connect(ui->btnMoreDetail, &QPushButton::clicked, this, [this]() {
@@ -57,21 +57,96 @@ BrowseWindow::~BrowseWindow()
     delete ui;
 }
 
+bool BrowseWindow::isSeatCapacitySort() const
+{
+    return ui->cmbSortBy->currentText() == "Seat Capacity";
+}
+
+void BrowseWindow::setHeaders()
+{
+    QStringList headers;
+    headers << "#"
+            << "ID";
+
+    if (isBrowsingByStadium())
+        headers << "Stadium Name" << "Team Name";
+    else
+        headers << "Team Name" << "Stadium Name";
+
+    headers << "League"
+            << "Location"
+            << "Seat Capacity"
+            << "Playing Surface"
+            << "Date Opened"
+            << "Distance to Center Field (ft)"
+            << "Distance to Center Field"
+            << "Ballpark Typology"
+            << "Roof Type";
+
+    ui->tblBrowse->setColumnCount(headers.size());
+    ui->tblBrowse->setHorizontalHeaderLabels(headers);
+}
+
+QString BrowseWindow::stadiumValueForColumn(const Stadium& s, int dataColumnIndex) const
+{
+    switch (dataColumnIndex)
+    {
+    case 0:
+        return QString::number(s.stadium_id);
+
+    case 1:
+        return isBrowsingByStadium() ? s.stadium_name : s.team_name;
+
+    case 2:
+        return isBrowsingByStadium() ? s.team_name : s.stadium_name;
+
+    case 3:
+        return s.league;
+
+    case 4:
+        return s.location;
+
+    case 5:
+        return QString::number(s.seating_capacity);
+
+    case 6:
+        return s.playing_surface;
+
+    case 7:
+        return QString::number(s.date_opened);
+
+    case 8:
+        return QString::number(s.distance_to_center_field_ft);
+
+    case 9:
+        return s.distance_to_center_field_raw;
+
+    case 10:
+        return s.ballpark_typology;
+
+    case 11:
+        return s.roof_type;
+
+    default:
+        return "";
+    }
+}
+
 void BrowseWindow::setupTable()
 {
-    ui->tblBrowse->setColumnCount(5);
-
-    QStringList headers;
-    headers << "Team Name" << "Stadium Name" << "League" << "Location" << "Seat Capacity";
-    ui->tblBrowse->setHorizontalHeaderLabels(headers);
+    setHeaders();
 
     ui->tblBrowse->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tblBrowse->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->tblBrowse->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tblBrowse->setAlternatingRowColors(true);
-    ui->tblBrowse->horizontalHeader()->setStretchLastSection(true);
-    ui->tblBrowse->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    ui->tblBrowse->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->tblBrowse->horizontalHeader()->setStretchLastSection(false);
     ui->tblBrowse->verticalHeader()->setVisible(false);
+
+    ui->tblBrowse->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    ui->tblBrowse->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 }
 
 StadiumRepository::StadiumSortBy BrowseWindow::getSelectedSort() const
@@ -117,6 +192,7 @@ bool BrowseWindow::isBrowsingByStadium() const
 
 void BrowseWindow::loadBrowseTable()
 {
+    ui->tblBrowse->clearContents();
     ui->tblBrowse->setRowCount(0);
     stadiums.clear();
 
@@ -132,38 +208,47 @@ void BrowseWindow::loadBrowseTable()
         isBrowsingByStadium()
         );
 
-    QStringList headers;
-    if (ui->cmbBrowseBy->currentText() == "Stadium")
-        headers << "Stadium Name" << "Team Name" << "League" << "Location" << "Seat Capacity";
-    else
-        headers << "Team Name" << "Stadium Name" << "League" << "Location" << "Seat Capacity";
+    setHeaders();
 
-    ui->tblBrowse->setHorizontalHeaderLabels(headers);
-    ui->tblBrowse->setRowCount(static_cast<int>(stadiums.size()));
+    int totalSeatCapacity = 0;
+    for (const Stadium& s : stadiums)
+        totalSeatCapacity += s.seating_capacity;
+
+    int rowCount = static_cast<int>(stadiums.size());
+    if (isSeatCapacitySort())
+        rowCount += 1;
+
+    ui->tblBrowse->setRowCount(rowCount);
 
     for (int row = 0; row < static_cast<int>(stadiums.size()); ++row)
     {
         const Stadium& s = stadiums[row];
 
-        QString firstColumnText;
-        QString secondColumnText;
+        QTableWidgetItem *rowNumberItem = new QTableWidgetItem(QString::number(row + 1));
+        rowNumberItem->setTextAlignment(Qt::AlignCenter);
+        ui->tblBrowse->setItem(row, 0, rowNumberItem);
 
-        if (ui->cmbBrowseBy->currentText() == "Stadium")
+        for (int dataCol = 0; dataCol <= 11; ++dataCol)
         {
-            firstColumnText = s.stadium_name;
-            secondColumnText = s.team_name;
+            QTableWidgetItem *item =
+                new QTableWidgetItem(stadiumValueForColumn(s, dataCol));
+            item->setTextAlignment(Qt::AlignCenter);
+            ui->tblBrowse->setItem(row, dataCol + 1, item);
         }
-        else
+    }
+
+    if (isSeatCapacitySort())
+    {
+        int totalRow = static_cast<int>(stadiums.size());
+
+        for (int col = 0; col < ui->tblBrowse->columnCount(); ++col)
         {
-            firstColumnText = s.team_name;
-            secondColumnText = s.stadium_name;
+            QTableWidgetItem *item = new QTableWidgetItem("");
+            item->setTextAlignment(Qt::AlignCenter);
+            ui->tblBrowse->setItem(totalRow, col, item);
         }
 
-        ui->tblBrowse->setItem(row, 0, new QTableWidgetItem(firstColumnText));
-        ui->tblBrowse->setItem(row, 1, new QTableWidgetItem(secondColumnText));
-        ui->tblBrowse->setItem(row, 2, new QTableWidgetItem(s.league));
-        ui->tblBrowse->setItem(row, 3, new QTableWidgetItem(s.location));
-        ui->tblBrowse->setItem(row, 4, new QTableWidgetItem(QString::number(s.seating_capacity)));
+        ui->tblBrowse->item(totalRow, 6)->setText(QString::number(totalSeatCapacity));
     }
 
     if (!stadiums.empty())
@@ -174,6 +259,7 @@ void BrowseWindow::openDetailWindowForSelectedRow()
 {
     int row = ui->tblBrowse->currentRow();
 
+    // Ignore invalid row and ignore the final total row
     if (row < 0 || row >= static_cast<int>(stadiums.size()))
     {
         QMessageBox::information(this, "Selection Required", "Please select a stadium first.");

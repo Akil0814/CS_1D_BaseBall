@@ -61,20 +61,20 @@
       </rect>
      </property>
      <property name="text">
-      <string>Start Stadium:</string>
+      <string>Start Point:</string>
      </property>
     </widget>
     <widget class="QLabel" name="lblTargetTeam">
      <property name="geometry">
       <rect>
-       <x>420</x>
+       <x>400</x>
        <y>30</y>
-       <width>61</width>
+       <width>71</width>
        <height>16</height>
       </rect>
      </property>
      <property name="text">
-      <string>Target Team:</string>
+      <string>Target Point:</string>
      </property>
     </widget>
     <widget class="QComboBox" name="cmbStartStadium">
@@ -82,7 +82,7 @@
       <rect>
        <x>80</x>
        <y>30</y>
-       <width>221</width>
+       <width>241</width>
        <height>22</height>
       </rect>
      </property>
@@ -115,7 +115,7 @@
       <rect>
        <x>20</x>
        <y>100</y>
-       <width>256</width>
+       <width>291</width>
        <height>231</height>
       </rect>
      </property>
@@ -123,9 +123,9 @@
     <widget class="QListWidget" name="listSelectedTeams">
      <property name="geometry">
       <rect>
-       <x>480</x>
+       <x>440</x>
        <y>100</y>
-       <width>256</width>
+       <width>301</width>
        <height>231</height>
       </rect>
      </property>
@@ -133,7 +133,7 @@
     <widget class="QLabel" name="lblSelectedTeams">
      <property name="geometry">
       <rect>
-       <x>480</x>
+       <x>440</x>
        <y>80</y>
        <width>111</width>
        <height>16</height>
