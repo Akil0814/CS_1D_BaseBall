@@ -143,6 +143,38 @@
          </item>
         </widget>
        </item>
+       <item>
+        <widget class="QLabel" name="lblCenterFieldFilter">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Center Field</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="cmbCenterFieldFilter">
+         <item>
+          <property name="text">
+           <string>All</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Only Max Center Field</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Only Min Center Field</string>
+          </property>
+         </item>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
