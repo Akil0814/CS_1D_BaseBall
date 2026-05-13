@@ -5,7 +5,9 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_DashboardPage.h" resolved
 
 #include "DashboardPage.h"
-
+#include <QDialogButtonBox>
+#include <QIntValidator>
+#include <QSet>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
