@@ -47,11 +47,11 @@ public:
 
     // Adjust column indices (e.g., 1 for team_name, 2 for stadium_name)
     // [span_0](start_span)// to match your specific DB table structure[span_0](end_span)
-        QString teamName = model->data(model->index(index.row(), 1)).toString();
+    QString teamName = model->data(model->index(index.row(), 1)).toString();
     QString stadiumName = model->data(model->index(index.row(), 2)).toString();
 
            // Concatenate the strings for the single cell display
-    option->text = QString("%1 — %2").arg(teamName, stadiumName);
+    option->text = QString("%1 - %2").arg(teamName, stadiumName);
   }
 };
 
@@ -257,7 +257,7 @@ void DashboardPage::setupSouvenirTableFormatting() {
 void DashboardPage::on_addSouvenirButton_clicked()
 {
     auto stadiumIndex = ui->stadiumList->currentIndex();
-
+    QSqlRecord record = stadiumModel->record(stadiumIndex.row());
     if (stadiumIndex.isValid()) {
         QString stadiumName = stadiumIndex.data().toString();
 
@@ -270,13 +270,17 @@ void DashboardPage::on_addSouvenirButton_clicked()
             QString name = dialog.getName();
             double price = dialog.getPrice();
 
+
+                   // 2. Get the ID (Make sure this matches "stadium_id" in database_manager.cpp)
+            int stadiumId = record.value("stadium_id").toInt();
+
             Souvenir item;
 
             item.owner_stadium_id = stadium->stadium_id;
             item.name = name;
             item.price = price;
 
-            APP->souvenirRepository()->addSouvenir(stadium->stadium_id, item);
+            APP->souvenirRepository()->addSouvenir(stadiumId, item);
 
             qDebug() << name << price;
 
