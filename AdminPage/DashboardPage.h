@@ -32,7 +32,8 @@ public:
 private slots:
     void on_addSouvenirButton_clicked();
     void on_removeSouvenirButton_clicked();
-
+    void on_removeDistanceButton_clicked();
+    void on_addDistanceButton_clicked();
     void on_uploadFile_clicked();
 
     void refreshConnections();
@@ -42,11 +43,17 @@ private slots:
     void setupValidators();
     void setupDetailsPanel();
     void updateField(int columnIdx, const QVariant &value);
+    void linkDistanceDB(const QSqlDatabase &db);
+    void setupDistanceModel(const QSqlDatabase &db);
+    void setupDistanceTableFormatting();
+    void setupDistanceFiltering();
+
 
 private:
     Ui::DashboardPage *ui;
     QSqlTableModel* stadiumModel{};
     QSqlTableModel* souvenirModel{};
+    QSqlTableModel* distanceModel{};
 };
 
 

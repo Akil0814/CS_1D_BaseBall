@@ -8,6 +8,7 @@
 
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFormLayout>
 #include <QHash>
 #include <QSqlError>
 #include <QSqlRecord>
@@ -18,7 +19,18 @@
 #include <QSqlTableModel>
 #include <QMessageBox>
 #include <souvenir_adding/newsouvenirpopup.h>
+#include <QStyledItemDelegate>
 
+class StadiumNameDelegate : public QStyledItemDelegate {
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+    QString displayText(const QVariant &value, const QLocale &locale) const override {
+        int id = value.toInt();
+        auto stadium = APP->stadiumRepository()->getStadiumByID(id);
+        return stadium ? stadium->stadium_name : "Unknown Stadium";
+    }
+};
 namespace
 {
 enum class CsvImportType
@@ -70,7 +82,6 @@ void appendImportMessage(QStringList& lines,
 }
 }
 #include "stadium_adding/stadium_adding.h"
-
 
 DashboardPage::DashboardPage(QWidget *parent) :
 QWidget(parent), ui(new Ui::DashboardPage) {
@@ -372,10 +383,15 @@ void DashboardPage::refreshConnections() {
         souvenirModel->deleteLater();
         souvenirModel = nullptr;
     }
+    if (distanceModel) {
+        distanceModel->deleteLater();
+        distanceModel = nullptr;
+    }
 
     // Re-link with the fresh DB handle
     linkStadiumDB(db);
     linkSouvenirDB(db);
+    linkDistanceDB(db);
 }
 
 void DashboardPage::on_removeStadiumButton_clicked()
@@ -535,6 +551,157 @@ void DashboardPage::updateField(int columnIdx, const QVariant &value) {
             qDebug() << "Column" << columnIdx << "updated successfully.";
         } else {
             qDebug() << "Update failed:" << stadiumModel->lastError().text();
+        }
+    }
+}
+
+void DashboardPage::linkDistanceDB(const QSqlDatabase &db) {
+    setupDistanceModel(db);
+
+    // Assuming your UI has a QTableView named distanceTableView
+    ui->distancesTableView->setModel(distanceModel);
+
+    setupDistanceTableFormatting();
+    setupDistanceFiltering();
+}
+
+void DashboardPage::setupDistanceModel(const QSqlDatabase &db) {
+    distanceModel = new QSqlTableModel(this, db);
+    distanceModel->setTable("stadium_distances"); // Matches the table name in your DB schema
+
+    // Set filter to empty initially or show all
+    distanceModel->setFilter("stadium_a_id = ''");
+
+    if (!distanceModel->select()) {
+        qDebug() << "Distance Model Error:" << distanceModel->lastError().text();
+    }
+
+    distanceModel->setEditStrategy(QSqlTableModel::OnFieldChange);
+}
+
+void DashboardPage::setupDistanceTableFormatting() {
+    // Hide IDs if they exist in the distances table (e.g., column 0)
+    ui->distancesTableView->setColumnHidden(0, true);
+
+    ui->distancesTableView->setItemDelegateForColumn(1, new StadiumNameDelegate(this));
+
+    distanceModel->setHeaderData(0, Qt::Horizontal, "From Stadium");
+    distanceModel->setHeaderData(1, Qt::Horizontal, "To Stadium");
+    distanceModel->setHeaderData(2, Qt::Horizontal, "Distance (mi)");
+
+    QHeaderView *header = ui->distancesTableView->horizontalHeader();
+    header->setSectionResizeMode(QHeaderView::Stretch);
+}
+
+void DashboardPage::setupDistanceFiltering() {
+    // When a stadium is clicked, show all distances originating FROM that stadium
+    connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
+        QSqlRecord record = stadiumModel->record(index.row());
+
+        // Use the stadium name to filter (matches 'originated_stadium' column)
+        int stadiumID = APP->stadiumRepository()->getStadiumByStadiumName(record.value("stadium_name").toString())->stadium_id;
+
+        distanceModel->setFilter(QString("stadium_a_id = '%1'").arg(stadiumID));
+        distanceModel->select();
+    });
+}
+
+
+void DashboardPage::on_removeDistanceButton_clicked()
+{
+    // 1. Get the current selection from the table view
+    QModelIndex index = ui->distancesTableView->currentIndex();
+    if (!index.isValid()) {
+        return; // Nothing selected
+    }
+
+    int row = index.row();
+
+    // 2. Access the raw record from the model
+    // This ignores the Delegate and gives you the actual database values
+    QSqlRecord record = distanceModel->record(row);
+
+    // 3. Extract the IDs using your database column names
+    int originId = record.value("stadium_a_id").toInt();
+    int destId = record.value("stadium_b_id").toInt();
+    // 4. Call your repository function
+    APP->distanceRepository()->removeDistanceBetweenStadiums(originId, destId);
+
+    // 5. Refresh the UI
+    distanceModel->select();
+}
+
+void DashboardPage::on_addDistanceButton_clicked() {
+    QModelIndex stadiumIdx = ui->stadiumList->currentIndex();
+    if (!stadiumIdx.isValid()) {
+        QMessageBox::warning(this, "Selection Required", "Please select an originating stadium from the list first.");
+        return;
+    }
+
+    // 1. Get the origin stadium details
+    QSqlRecord originRecord = stadiumModel->record(stadiumIdx.row());
+    int originId = originRecord.value("stadium_id").toInt();
+    QString originName = originRecord.value("stadium_name").toString();
+
+    // 2. Create the Popup Dialog on the stack
+    QDialog dialog(this);
+    dialog.setWindowTitle("Add New Distance from " + originName);
+
+    QFormLayout form(&dialog);
+    QComboBox* stadiumCombo = new QComboBox(&dialog);
+    QLineEdit* distanceEdit = new QLineEdit(&dialog);
+    distanceEdit->setValidator(new QIntValidator(1, 9999, &dialog));
+    distanceEdit->setPlaceholderText("Miles");
+
+    // 3. Identify existing destinations to exclude them (so we don't add duplicates)
+    QSet<int> existingDestIds;
+    for (int i = 0; i < distanceModel->rowCount(); ++i) {
+        existingDestIds.insert(distanceModel->record(i).value("stadium_b_id").toInt());
+    }
+
+    // 4. Populate the ComboBox with valid targets
+    // We iterate through the stadiumModel to find stadiums that aren't 'Us' and aren't already linked
+    for (int i = 0; i < stadiumModel->rowCount(); ++i) {
+        QSqlRecord rec = stadiumModel->record(i);
+        int targetId = rec.value("stadium_id").toInt();
+        QString targetName = rec.value("stadium_name").toString();
+
+        if (targetId != originId && !existingDestIds.contains(targetId)) {
+            stadiumCombo->addItem(targetName, targetId); // Store ID in UserData
+        }
+    }
+
+    if (stadiumCombo->count() == 0) {
+        QMessageBox::information(this, "No Options", "All possible stadium connections already exist.");
+        return;
+    }
+
+    form.addRow("To Stadium:", stadiumCombo);
+    form.addRow("Distance (mi):", distanceEdit);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+    connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    // 5. Execute and Save
+    if (dialog.exec() == QDialog::Accepted) {
+        int destinationId = stadiumCombo->currentData().toInt();
+        int distance = distanceEdit->text().toInt();
+
+        if (distance <= 0) {
+            QMessageBox::warning(this, "Invalid Input", "Please enter a valid distance.");
+            return;
+        }
+
+        // Call your repository to save the distance
+        bool success = APP->distanceRepository()->addDistanceBetweenStadiums(originId, destinationId, distance);
+
+        if (success) {
+            distanceModel->select(); // Refresh the table view
+            qDebug() << "Distance added successfully between" << originId << "and" << destinationId;
+        } else {
+            QMessageBox::critical(this, "Database Error", "Failed to insert distance into the database.");
         }
     }
 }
