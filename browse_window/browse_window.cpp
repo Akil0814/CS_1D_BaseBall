@@ -50,6 +50,11 @@ BrowseWindow::BrowseWindow(QWidget *parent)
             [this](int) {
                 loadBrowseTable();
             });
+
+    connect(ui->cmbCenterFieldFilter, &QComboBox::currentIndexChanged, this,
+            [this](int) {
+                loadBrowseTable();
+            });
 }
 
 BrowseWindow::~BrowseWindow()
@@ -185,9 +190,51 @@ StadiumRepository::LeagueFilter BrowseWindow::getSelectedLeague() const
     return StadiumRepository::LeagueFilter::All;
 }
 
+BrowseWindow::CenterFieldFilter BrowseWindow::getSelectedCenterFieldFilter() const
+{
+    const QString filterText = ui->cmbCenterFieldFilter->currentText();
+
+    if (filterText == "Only Max Center Field")
+        return CenterFieldFilter::MaximumOnly;
+    if (filterText == "Only Min Center Field")
+        return CenterFieldFilter::MinimumOnly;
+
+    return CenterFieldFilter::All;
+}
+
 bool BrowseWindow::isBrowsingByStadium() const
 {
     return ui->cmbBrowseBy->currentText() == "Stadium";
+}
+
+void BrowseWindow::applyCenterFieldFilter(std::vector<Stadium>& stadiumList) const
+{
+    if (stadiumList.empty())
+        return;
+
+    const CenterFieldFilter filter = getSelectedCenterFieldFilter();
+    if (filter == CenterFieldFilter::All)
+        return;
+
+    int targetDistance = stadiumList.front().distance_to_center_field_ft;
+    for (const Stadium& stadium : stadiumList)
+    {
+        if (filter == CenterFieldFilter::MaximumOnly
+            && stadium.distance_to_center_field_ft > targetDistance)
+            targetDistance = stadium.distance_to_center_field_ft;
+        else if (filter == CenterFieldFilter::MinimumOnly
+                 && stadium.distance_to_center_field_ft < targetDistance)
+            targetDistance = stadium.distance_to_center_field_ft;
+    }
+
+    std::vector<Stadium> filteredStadiums;
+    for (const Stadium& stadium : stadiumList)
+    {
+        if (stadium.distance_to_center_field_ft == targetDistance)
+            filteredStadiums.push_back(stadium);
+    }
+
+    stadiumList = std::move(filteredStadiums);
 }
 
 void BrowseWindow::loadBrowseTable()
@@ -207,6 +254,7 @@ void BrowseWindow::loadBrowseTable()
         getSelectedLeague(),
         isBrowsingByStadium()
         );
+    applyCenterFieldFilter(stadiums);
 
     setHeaders();
 

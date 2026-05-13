@@ -19,12 +19,21 @@ public:
     ~BrowseWindow();
 
 private:
+    enum class CenterFieldFilter
+    {
+        All,
+        MaximumOnly,
+        MinimumOnly
+    };
+
     void loadBrowseTable();
     void setupTable();
     StadiumRepository::StadiumSortBy getSelectedSort() const;
     StadiumRepository::LeagueFilter getSelectedLeague() const;
+    CenterFieldFilter getSelectedCenterFieldFilter() const;
     bool isBrowsingByStadium() const;
     void openDetailWindowForSelectedRow();
+    void applyCenterFieldFilter(std::vector<Stadium>& stadiumList) const;
 
     bool isSeatCapacitySort() const;
     void setHeaders();

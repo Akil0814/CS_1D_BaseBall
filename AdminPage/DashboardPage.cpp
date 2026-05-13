@@ -259,10 +259,6 @@ void DashboardPage::on_addSouvenirButton_clicked()
     auto stadiumIndex = ui->stadiumList->currentIndex();
     QSqlRecord record = stadiumModel->record(stadiumIndex.row());
     if (stadiumIndex.isValid()) {
-        QString stadiumName = stadiumIndex.data().toString();
-
-        auto stadium = APP->stadiumRepository()->getStadiumByStadiumName(stadiumName);
-
         newSouvenirPopup dialog(this);
 
         if (dialog.exec() == QDialog::Accepted)
@@ -276,7 +272,7 @@ void DashboardPage::on_addSouvenirButton_clicked()
 
             Souvenir item;
 
-            item.owner_stadium_id = stadium->stadium_id;
+            item.owner_stadium_id = stadiumId;
             item.name = name;
             item.price = price;
 
@@ -629,8 +625,7 @@ void DashboardPage::setupDistanceFiltering() {
     connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
         QSqlRecord record = stadiumModel->record(index.row());
 
-        // Use the stadium name to filter (matches 'originated_stadium' column)
-        int stadiumID = APP->stadiumRepository()->getStadiumByStadiumName(record.value("stadium_name").toString())->stadium_id;
+        int stadiumID = record.value("stadium_id").toInt();
 
         distanceModel->setFilter(QString("stadium_a_id = '%1'").arg(stadiumID));
         distanceModel->select();
