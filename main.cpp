@@ -7,6 +7,7 @@
 #include "AdminPage/DashboardPage.h"
 #include "AdminPage/LoginPage.h"
 #include "App/application.h"
+#include "end_trip_summary/end_trip_summary.h"
 #include "main_page/main_page.h"
 #include "trip_planning/trip_detail_page/trip_detail_page.h"
 
@@ -25,6 +26,7 @@ int main(int argc, char *argv[])
         std::cout << APP->lastWarning().toStdString() << std::endl;
          
     MainWindow w;
+
 
     // TripDetailPage detail;
     //detail.show();

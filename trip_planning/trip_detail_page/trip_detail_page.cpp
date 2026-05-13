@@ -1,4 +1,5 @@
 #include "trip_detail_page.h"
+#include "end_trip_summary/end_trip_summary.h"
 #include "ui_trip_detail_page.h"
 #include "../cart_page/cart_page.h"
 #include "../detail_window/detail_window.h"
@@ -87,6 +88,7 @@ void TripDetailPage::handleViewCartClick()
 
 void TripDetailPage::handleEndTripClick()
 {
+    
 }
 
 void TripDetailPage::handlePreviousStopClick()
@@ -557,3 +559,20 @@ void TripDetailPage::showCartSummary(const QString& title, bool close_after_show
     if (close_after_showing)
         close();
 }
+
+void TripDetailPage::on_btnEndTrip_clicked()
+{
+    // 1. Create the summary window on the heap
+    // Pass 'this->parentWidget()' or nullptr if you want it to be a top-level window
+    auto *summaryWindow = new end_trip_summary();
+
+    // 2. Set it to delete itself when closed to prevent memory leaks
+    summaryWindow->setAttribute(Qt::WA_DeleteOnClose);
+
+    // 3. Show the new window
+    summaryWindow->show();
+
+    // 4. Close the current TripDetailPage
+    this->close();
+}
+

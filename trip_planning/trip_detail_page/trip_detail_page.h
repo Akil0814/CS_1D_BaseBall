@@ -31,7 +31,9 @@ private slots:
     void handleAddToCartClick();
     void handleTripStopsCurrentRowChange(int currentRow);
 
-private:
+    void on_btnEndTrip_clicked();
+
+  private:
     void loadTripStops();
     void loadSouvenirs();
     void openMoreInfo();
