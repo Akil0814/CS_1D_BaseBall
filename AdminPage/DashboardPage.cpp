@@ -181,7 +181,7 @@ void DashboardPage::setupStadiumNameField() {
         QModelIndex currentIndex = ui->stadiumList->currentIndex();
         if (currentIndex.isValid()) {
             // Create an index specifically for Column 1 (campusName)
-            QModelIndex nameIndex = stadiumModel->index(currentIndex.row(), 1);
+            QModelIndex nameIndex = stadiumModel->index(currentIndex.row(), 2);
 
             QString newName = ui->stadiumNameLineEdit->text();
 
