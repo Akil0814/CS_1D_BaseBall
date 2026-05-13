@@ -33,6 +33,28 @@ public:
         return stadium ? stadium->stadium_name : "Unknown Stadium";
     }
 };
+
+class StadiumDisplayDelegate : public QStyledItemDelegate {
+public:
+  using QStyledItemDelegate::QStyledItemDelegate;
+
+         // Overriding this allows us to change the text displayed in the list
+  void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
+    QStyledItemDelegate::initStyleOption(option, index);
+
+           // Access the model to get data from other columns in the same row
+    const QAbstractItemModel *model = index.model();
+
+    // Adjust column indices (e.g., 1 for team_name, 2 for stadium_name)
+    // [span_0](start_span)// to match your specific DB table structure[span_0](end_span)
+        QString teamName = model->data(model->index(index.row(), 1)).toString();
+    QString stadiumName = model->data(model->index(index.row(), 2)).toString();
+
+           // Concatenate the strings for the single cell display
+    option->text = QString("%1 — %2").arg(teamName, stadiumName);
+  }
+};
+
 namespace
 {
 enum class CsvImportType
@@ -109,12 +131,15 @@ DashboardPage::~DashboardPage() {
 }
 
 void DashboardPage::linkStadiumDB(const QSqlDatabase &db) {
-    setupStadiumModel(db);
+  setupStadiumModel(db);
 
-    ui->stadiumList->setModel(stadiumModel);
-    ui->stadiumList->setModelColumn(2);
+  ui->stadiumList->setModel(stadiumModel);
 
-    setupStadiumNameField();
+  // Apply the custom delegate to handle string concatenation
+  ui->stadiumList->setItemDelegate(new StadiumDisplayDelegate(this));
+
+         // Remove setModelColumn(2) so the delegate can access the full row index
+  setupStadiumNameField();
 }
 void DashboardPage::setupStadiumModel(const QSqlDatabase &db) {
     // create model
