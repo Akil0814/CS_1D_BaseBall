@@ -97,21 +97,6 @@ if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(CS_1D_BaseBall)
 endif()
 
-add_executable(CS_1D_BaseBall_CLI
-    App/services/trip_planner_cli.cpp
-)
-
-target_include_directories(CS_1D_BaseBall_CLI PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/App
-)
-
-target_link_libraries(CS_1D_BaseBall_CLI PRIVATE
-    app
-    Qt${QT_VERSION_MAJOR}::Core
-    Qt${QT_VERSION_MAJOR}::Sql
-)
-
 include(GNUInstallDirs)
 
 install(TARGETS CS_1D_BaseBall

@@ -8,6 +8,7 @@
 
 #include "../model/trip.h"
 #include "../../data_types.h"
+#include "../data_access/distancere_pository.h"
 #include "../data_access/stadium_repository.h"
 
 class TripPlanner
@@ -15,7 +16,7 @@ class TripPlanner
     friend class Application;
 
 public:
-    explicit TripPlanner(StadiumRepository& repo);
+    TripPlanner(StadiumRepository& stadium_repo, DistanceRepository& distance_repo);
 
     [[nodiscard]] Trip* getCurrentTrip() const;
 
@@ -70,7 +71,8 @@ private:
 
 private:
     std::unique_ptr<Trip> _current_trip;
-    StadiumRepository& _repo;
+    StadiumRepository& _stadium_repo;
+    DistanceRepository& _distance_repo;
 };
 
 #endif // TRIP_PLANNER_H

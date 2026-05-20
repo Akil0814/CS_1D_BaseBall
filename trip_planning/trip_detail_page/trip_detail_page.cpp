@@ -55,7 +55,9 @@ TripDetailPage::TripDetailPage(QWidget *parent)
     connect(_ui->lstTripStops, &QListWidget::currentRowChanged,
             this, &TripDetailPage::handleTripStopsCurrentRowChange);
 
-    _current_trip = APP->getTripPlanner()->getCurrentTrip();
+    TripPlanner* planner = APP->tripPlanner();
+    if (planner != nullptr)
+        _current_trip = planner->getCurrentTrip();
 
     if (!_current_trip)
     {

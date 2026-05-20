@@ -5,13 +5,20 @@
 #ifndef GITIGNORE_DASHBOARDPAGE_H
 #define GITIGNORE_DASHBOARDPAGE_H
 
-#include <QSqlTableModel>
+#include "../data_types.h"
+
+#include <QVariant>
 #include <QWidget>
 
+#include <optional>
+#include <vector>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class DashboardPage; }
 QT_END_NAMESPACE
+
+class QModelIndex;
+class QStandardItemModel;
 
 class DashboardPage : public QWidget {
 Q_OBJECT
@@ -19,15 +26,6 @@ Q_OBJECT
 public:
     explicit DashboardPage(QWidget *parent = nullptr);
     ~DashboardPage() override;
-
-    void linkStadiumDB(const QSqlDatabase &db);
-    void setupStadiumModel(const QSqlDatabase &db);
-    void setupStadiumNameField();
-
-    void linkSouvenirDB(const QSqlDatabase &db);
-    void setupSouvenirModel(const QSqlDatabase &db);
-    void setupSouvenirFiltering();
-    void setupSouvenirTableFormatting();
 
 private slots:
     void on_addSouvenirButton_clicked();
@@ -43,17 +41,38 @@ private slots:
     void setupValidators();
     void setupDetailsPanel();
     void updateField(int columnIdx, const QVariant &value);
-    void linkDistanceDB(const QSqlDatabase &db);
-    void setupDistanceModel(const QSqlDatabase &db);
-    void setupDistanceTableFormatting();
-    void setupDistanceFiltering();
 
+private:
+    void setupStadiumModel();
+    void setupStadiumNameField();
+    void setupSouvenirModel();
+    void setupSouvenirTableFormatting();
+    void setupDistanceModel();
+    void setupDistanceTableFormatting();
+
+    void populateStadiumModel(int selected_stadium_id = -1);
+    void populateSouvenirModel(int stadium_id);
+    void populateDistanceModel(int stadium_id);
+    void populateDetailsPanel(const Stadium* stadium);
+    void handleStadiumSelectionChanged(const QModelIndex& current_index);
+
+    std::optional<int> currentStadiumId() const;
+    std::optional<Stadium> currentStadium() const;
+    QString stadiumDisplayText(const Stadium& stadium) const;
+    QString stadiumNameById(int stadium_id) const;
 
 private:
     Ui::DashboardPage *ui;
-    QSqlTableModel* stadiumModel{};
-    QSqlTableModel* souvenirModel{};
-    QSqlTableModel* distanceModel{};
+    QStandardItemModel* stadiumModel{};
+    QStandardItemModel* souvenirModel{};
+    QStandardItemModel* distanceModel{};
+
+    std::vector<Stadium> _stadiums;
+    std::vector<Souvenir> _souvenirs;
+    std::vector<DistanceEdge> _distances;
+
+    bool _is_loading_details = false;
+    bool _is_populating_models = false;
 };
 
 

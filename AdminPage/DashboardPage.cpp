@@ -1,59 +1,37 @@
- //
+//
 // Created by Erfan Tavassoli on 4/6/26.
 //
 
-// You may need to build the project (run Qt uic code generator) to get "ui_DashboardPage.h" resolved
-
 #include "DashboardPage.h"
+
+#include "stadium_adding/stadium_adding.h"
+#include "ui_DashboardPage.h"
+
+#include "App/application.h"
+#include "App/utils/csv_utils.h"
+#include "souvenir_adding/newsouvenirpopup.h"
+
+#include <QDialog>
 #include <QDialogButtonBox>
-#include <QIntValidator>
-#include <QSet>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHash>
-#include <QSqlError>
-#include <QSqlRecord>
-#include <QStringList>
-#include "ui_DashboardPage.h"
-#include "App/application.h"
-#include "App/utils/csv_utils.h"
-#include <QSqlTableModel>
+#include <QHeaderView>
+#include <QIntValidator>
+#include <QItemSelectionModel>
+#include <QLineEdit>
 #include <QMessageBox>
-#include <souvenir_adding/newsouvenirpopup.h>
-#include <QStyledItemDelegate>
-
-class StadiumNameDelegate : public QStyledItemDelegate {
-public:
-    using QStyledItemDelegate::QStyledItemDelegate;
-
-    QString displayText(const QVariant &value, const QLocale &locale) const override {
-        int id = value.toInt();
-        auto stadium = APP->stadiumRepository()->getStadiumByID(id);
-        return stadium ? stadium->stadium_name : "Unknown Stadium";
-    }
-};
-
-class StadiumDisplayDelegate : public QStyledItemDelegate {
-public:
-  using QStyledItemDelegate::QStyledItemDelegate;
-
-         // Overriding this allows us to change the text displayed in the list
-  void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
-    QStyledItemDelegate::initStyleOption(option, index);
-
-           // Access the model to get data from other columns in the same row
-    const QAbstractItemModel *model = index.model();
-
-    // Adjust column indices (e.g., 1 for team_name, 2 for stadium_name)
-    // [span_0](start_span)// to match your specific DB table structure[span_0](end_span)
-    QString teamName = model->data(model->index(index.row(), 1)).toString();
-    QString stadiumName = model->data(model->index(index.row(), 2)).toString();
-
-           // Concatenate the strings for the single cell display
-    option->text = QString("%1 - %2").arg(teamName, stadiumName);
-  }
-};
+#include <QModelIndex>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
+#include <QSet>
+#include <QSignalBlocker>
+#include <QSpinBox>
+#include <QStandardItem>
+#include <QStandardItemModel>
+#include <QStringList>
 
 namespace
 {
@@ -63,6 +41,9 @@ enum class CsvImportType
     Stadium,
     Distance
 };
+
+constexpr int kPrimaryIdRole = Qt::UserRole + 1;
+constexpr int kSecondaryIdRole = Qt::UserRole + 2;
 
 CsvImportType detectCsvImportType(const QString& file_path)
 {
@@ -104,202 +85,441 @@ void appendImportMessage(QStringList& lines,
 
     lines.append(line);
 }
+
+std::optional<double> parseNonNegativeDouble(const QString& text)
+{
+    bool ok = false;
+    const double value = text.trimmed().toDouble(&ok);
+    if (!ok || value < 0.0)
+        return std::nullopt;
+
+    return value;
 }
-#include "stadium_adding/stadium_adding.h"
+}
 
-DashboardPage::DashboardPage(QWidget *parent) :
-QWidget(parent), ui(new Ui::DashboardPage) {
+DashboardPage::DashboardPage(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::DashboardPage)
+{
     ui->setupUi(this);
-
-    const QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
-
     ui->detailsTabWidget->setCurrentIndex(0);
 
     setupComboBox();
     setupValidators();
+    setupStadiumModel();
+    setupStadiumNameField();
+    setupSouvenirModel();
+    setupDistanceModel();
     setupDetailsPanel();
-
-
     refreshConnections();
 
     connect(APP->databaseManager(), &DatabaseManager::databaseReset,
-        this, &DashboardPage::refreshConnections);
+            this, &DashboardPage::refreshConnections);
 }
 
-DashboardPage::~DashboardPage() {
+DashboardPage::~DashboardPage()
+{
     delete ui;
 }
 
-void DashboardPage::linkStadiumDB(const QSqlDatabase &db) {
-  setupStadiumModel(db);
+void DashboardPage::setupStadiumModel()
+{
+    stadiumModel = new QStandardItemModel(this);
+    stadiumModel->setColumnCount(1);
+    ui->stadiumList->setModel(stadiumModel);
 
-  ui->stadiumList->setModel(stadiumModel);
-
-  // Apply the custom delegate to handle string concatenation
-  ui->stadiumList->setItemDelegate(new StadiumDisplayDelegate(this));
-
-         // Remove setModelColumn(2) so the delegate can access the full row index
-  setupStadiumNameField();
+    connect(ui->stadiumList->selectionModel(), &QItemSelectionModel::currentChanged,
+            this, [this](const QModelIndex& current, const QModelIndex&) {
+                handleStadiumSelectionChanged(current);
+            });
 }
-void DashboardPage::setupStadiumModel(const QSqlDatabase &db) {
-    // create model
-    stadiumModel = new QSqlTableModel(this, db);
-    stadiumModel->setTable("stadiums");
 
-    if (!stadiumModel->select()) {
-        qDebug() << "Model Error:" << stadiumModel->lastError().text();
-    }
-
-    if (!APP->databaseManager()->isStadiumModuleAvailable()) {
-        qDebug() << "Data is not loaded yet!";
-    }
-
-    stadiumModel->setEditStrategy(QSqlTableModel::OnFieldChange);
-}
-void DashboardPage::setupStadiumNameField() {
-    // sync the lineedit when clicking on an index
-    connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
-        // Get the full record for the row you just clicked
-        QSqlRecord record = stadiumModel->record(index.row());
-
-        // Update the LineEdit with the name
-        QString name = record.value("stadium_name").toString(); // Use your actual column name
-        ui->stadiumNameLineEdit->setText(name);
-    });
-
-    // Handle live-editing the name back to the DB
-    connect(ui->stadiumNameLineEdit, &QLineEdit::textEdited, this, [this](const QString &newText) {
-        QModelIndex currentIndex = ui->stadiumList->currentIndex();
-        if (currentIndex.isValid()) {
-            // This updates the model, which updates the DB because of OnFieldChange
-            stadiumModel->setData(stadiumModel->index(currentIndex.row(), 2), newText);
-        }
-    });
-
-    // When the user presses Enter in the LineEdit
+void DashboardPage::setupStadiumNameField()
+{
     connect(ui->stadiumNameLineEdit, &QLineEdit::returnPressed, this, [this]() {
-        QModelIndex currentIndex = ui->stadiumList->currentIndex();
-        if (currentIndex.isValid()) {
-            // Create an index specifically for Column 1 (campusName)
-            QModelIndex nameIndex = stadiumModel->index(currentIndex.row(), 2);
-
-            QString newName = ui->stadiumNameLineEdit->text();
-
-            // Update the name, not the ID!
-            if (stadiumModel->setData(nameIndex, newName)) {
-                stadiumModel->submitAll(); // Push to project1.db
-                // emit notifyStatus("Campus updated successfully!");
-            } else {
-                qDebug() << "Update failed:" << stadiumModel->lastError().text();
-            }
-        }
-        qDebug() << "Update successful:" << stadiumModel->lastError().text();
+        updateField(2, ui->stadiumNameLineEdit->text());
     });
 }
 
-void DashboardPage::linkSouvenirDB(const QSqlDatabase &db) {
-    setupSouvenirModel(db);
+void DashboardPage::setupSouvenirModel()
+{
+    souvenirModel = new QStandardItemModel(this);
+    souvenirModel->setColumnCount(2);
+    souvenirModel->setHorizontalHeaderLabels({ "Souvenir Name", "Price ($)" });
 
     ui->souvenirTableView->setModel(souvenirModel);
-
     setupSouvenirTableFormatting();
 
-    // behavior for displaying souvenirs of the selected stadium
-    setupSouvenirFiltering();
-}
-void DashboardPage::setupSouvenirModel(const QSqlDatabase &db) {
-    // create model
-    souvenirModel = new QSqlTableModel(this, db);
-    souvenirModel->setTable("souvenirs");
-    souvenirModel->setFilter("stadium_id = -1");
+    connect(souvenirModel, &QStandardItemModel::itemChanged, this, [this](QStandardItem* item) {
+        if (_is_populating_models || item == nullptr)
+            return;
 
-    if (!souvenirModel->select()) {
-        qDebug() << "Model Error:" << souvenirModel->lastError().text();
-    }
+        const int row = item->row();
+        if (row < 0 || row >= static_cast<int>(_souvenirs.size()))
+            return;
 
-    if (!APP->databaseManager()->isStadiumModuleAvailable()) {
-        qDebug() << "Data is not loaded yet!";
-    }
+        Souvenir updated = _souvenirs[row];
 
-    souvenirModel->setEditStrategy(QSqlTableModel::OnFieldChange);
-}
-void DashboardPage::setupSouvenirFiltering() {
-    connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
-        // 1. Get the record from the STADIUM model
-        QSqlRecord record = stadiumModel->record(index.row());
+        if (item->column() == 0)
+        {
+            const QString name = item->text().trimmed();
+            if (name.isEmpty())
+            {
+                populateSouvenirModel(updated.owner_stadium_id);
+                return;
+            }
 
-        // 2. Get the ID (Make sure this matches "stadium_id" in database_manager.cpp)
-        int stadiumId = record.value("stadium_id").toInt();
+            updated.name = name;
+        }
+        else if (item->column() == 1)
+        {
+            const std::optional<double> price = parseNonNegativeDouble(item->text());
+            if (!price.has_value())
+            {
+                populateSouvenirModel(updated.owner_stadium_id);
+                return;
+            }
 
-        // 3. Apply the filter to the SOUVENIR model
-        // This tells SQL: "SELECT * FROM souvenirs WHERE stadium_id = X"
-        souvenirModel->setFilter(QString("stadium_id = %1").arg(stadiumId));
+            updated.price = *price;
+        }
+        else
+            return;
 
-        // 4. Refresh the data
-        souvenirModel->select();
+        SouvenirRepository* repo = APP->souvenirRepository();
+        if (repo == nullptr || !repo->updateSouvenir(updated))
+        {
+            QMessageBox::warning(this, "Update Souvenir", "Failed to update the selected souvenir.");
+            populateSouvenirModel(updated.owner_stadium_id);
+            return;
+        }
+
+        populateSouvenirModel(updated.owner_stadium_id);
     });
 }
-void DashboardPage::setupSouvenirTableFormatting() {
-    // hide the souvenir and stadium id
-    ui->souvenirTableView->setColumnHidden(0, true);
-    ui->souvenirTableView->setColumnHidden(1, true);
 
-    // rename headers for each column
-    souvenirModel->setHeaderData(2, Qt::Horizontal, "Souvenir Name");
-    souvenirModel->setHeaderData(3, Qt::Horizontal, "Price ($)");
-
+void DashboardPage::setupSouvenirTableFormatting()
+{
     QHeaderView *header = ui->souvenirTableView->horizontalHeader();
-    header->setSectionResizeMode(2, QHeaderView::Stretch);
-    header->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    header->setSectionResizeMode(0, QHeaderView::Stretch);
+    header->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 }
 
+void DashboardPage::setupDistanceModel()
+{
+    distanceModel = new QStandardItemModel(this);
+    distanceModel->setColumnCount(3);
+    distanceModel->setHorizontalHeaderLabels({ "From Stadium", "To Stadium", "Distance (mi)" });
+
+    ui->distancesTableView->setModel(distanceModel);
+    setupDistanceTableFormatting();
+
+    connect(distanceModel, &QStandardItemModel::itemChanged, this, [this](QStandardItem* item) {
+        if (_is_populating_models || item == nullptr || item->column() != 2)
+            return;
+
+        const int row = item->row();
+        if (row < 0 || row >= static_cast<int>(_distances.size()))
+            return;
+
+        const std::optional<double> updated_distance = parseNonNegativeDouble(item->text());
+        if (!updated_distance.has_value())
+        {
+            populateDistanceModel(currentStadiumId().value_or(-1));
+            return;
+        }
+
+        const DistanceEdge& edge = _distances[row];
+        DistanceRepository* repo = APP->distanceRepository();
+        if (repo == nullptr ||
+            !repo->updateDistanceBetweenStadiums(edge.from_stadium_id, edge.to_stadium_id, *updated_distance))
+        {
+            QMessageBox::warning(this, "Update Distance", "Failed to update the selected distance.");
+            populateDistanceModel(currentStadiumId().value_or(-1));
+            return;
+        }
+
+        populateDistanceModel(currentStadiumId().value_or(-1));
+    });
+}
+
+void DashboardPage::setupDistanceTableFormatting()
+{
+    QHeaderView *header = ui->distancesTableView->horizontalHeader();
+    header->setSectionResizeMode(0, QHeaderView::Stretch);
+    header->setSectionResizeMode(1, QHeaderView::Stretch);
+    header->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+}
+
+void DashboardPage::populateStadiumModel(int selected_stadium_id)
+{
+    stadiumModel->removeRows(0, stadiumModel->rowCount());
+    _stadiums.clear();
+
+    StadiumRepository* repo = APP->stadiumRepository();
+    if (repo == nullptr)
+    {
+        populateDetailsPanel(nullptr);
+        populateSouvenirModel(-1);
+        populateDistanceModel(-1);
+        return;
+    }
+
+    _stadiums = repo->getAllStadiums(StadiumRepository::StadiumSortBy::TeamName);
+
+    for (const Stadium& stadium : _stadiums)
+    {
+        auto *item = new QStandardItem(stadiumDisplayText(stadium));
+        item->setEditable(false);
+        item->setData(stadium.stadium_id, kPrimaryIdRole);
+        stadiumModel->appendRow(item);
+    }
+
+    if (_stadiums.empty())
+    {
+        populateDetailsPanel(nullptr);
+        populateSouvenirModel(-1);
+        populateDistanceModel(-1);
+        return;
+    }
+
+    int target_row = 0;
+    for (int row = 0; row < stadiumModel->rowCount(); ++row)
+    {
+        if (stadiumModel->data(stadiumModel->index(row, 0), kPrimaryIdRole).toInt() == selected_stadium_id)
+        {
+            target_row = row;
+            break;
+        }
+    }
+
+    ui->stadiumList->setCurrentIndex(stadiumModel->index(target_row, 0));
+}
+
+void DashboardPage::populateSouvenirModel(int stadium_id)
+{
+    _is_populating_models = true;
+    souvenirModel->removeRows(0, souvenirModel->rowCount());
+    _souvenirs.clear();
+
+    SouvenirRepository* repo = APP->souvenirRepository();
+    if (repo != nullptr && stadium_id > 0)
+        _souvenirs = repo->getSouvenirsByStadiumID(stadium_id);
+
+    for (const Souvenir& souvenir : _souvenirs)
+    {
+        auto *name_item = new QStandardItem(souvenir.name);
+        auto *price_item = new QStandardItem(QString::number(souvenir.price, 'f', 2));
+
+        name_item->setData(souvenir.souvenir_id, kPrimaryIdRole);
+        price_item->setData(souvenir.souvenir_id, kPrimaryIdRole);
+
+        QList<QStandardItem*> row_items;
+        row_items << name_item << price_item;
+        souvenirModel->appendRow(row_items);
+    }
+
+    _is_populating_models = false;
+}
+
+void DashboardPage::populateDistanceModel(int stadium_id)
+{
+    _is_populating_models = true;
+    distanceModel->removeRows(0, distanceModel->rowCount());
+    _distances.clear();
+
+    DistanceRepository* repo = APP->distanceRepository();
+    if (repo != nullptr && stadium_id > 0)
+    {
+        const std::optional<DistanceNode> node = repo->getDistanceNodeOfStadium(stadium_id);
+        if (node.has_value())
+            _distances = node->edges;
+    }
+
+    const QString from_name = stadiumNameById(stadium_id);
+
+    for (const DistanceEdge& edge : _distances)
+    {
+        auto *from_item = new QStandardItem(from_name);
+        auto *to_item = new QStandardItem(stadiumNameById(edge.to_stadium_id));
+        auto *distance_item = new QStandardItem(QString::number(edge.distance, 'f', 1));
+
+        from_item->setEditable(false);
+        to_item->setEditable(false);
+
+        from_item->setData(edge.from_stadium_id, kPrimaryIdRole);
+        from_item->setData(edge.to_stadium_id, kSecondaryIdRole);
+        to_item->setData(edge.from_stadium_id, kPrimaryIdRole);
+        to_item->setData(edge.to_stadium_id, kSecondaryIdRole);
+        distance_item->setData(edge.from_stadium_id, kPrimaryIdRole);
+        distance_item->setData(edge.to_stadium_id, kSecondaryIdRole);
+
+        QList<QStandardItem*> row_items;
+        row_items << from_item << to_item << distance_item;
+        distanceModel->appendRow(row_items);
+    }
+
+    _is_populating_models = false;
+}
+
+void DashboardPage::populateDetailsPanel(const Stadium* stadium)
+{
+    _is_loading_details = true;
+
+    const QSignalBlocker block_stadium_name(ui->stadiumNameLineEdit);
+    const QSignalBlocker block_team_name(ui->teamNameLineEdit);
+    const QSignalBlocker block_location(ui->locationLineEdit);
+    const QSignalBlocker block_league(ui->leagueComboBox);
+    const QSignalBlocker block_typology(ui->typologyComboBox);
+    const QSignalBlocker block_surface(ui->surfaceComboBox);
+    const QSignalBlocker block_roof(ui->roofComboBox);
+    const QSignalBlocker block_capacity(ui->seatingCapacitySpinBox);
+    const QSignalBlocker block_date_opened(ui->dateOpenedSpinBox);
+    const QSignalBlocker block_center_field(ui->centerFieldSpinBox);
+
+    if (stadium == nullptr)
+    {
+        ui->stadiumNameLineEdit->clear();
+        ui->teamNameLineEdit->clear();
+        ui->locationLineEdit->clear();
+        ui->leagueComboBox->setCurrentIndex(0);
+        ui->typologyComboBox->setCurrentIndex(0);
+        ui->surfaceComboBox->setCurrentIndex(0);
+        ui->roofComboBox->setCurrentIndex(0);
+        ui->seatingCapacitySpinBox->setValue(0);
+        ui->dateOpenedSpinBox->setValue(ui->dateOpenedSpinBox->minimum());
+        ui->centerFieldSpinBox->setValue(0);
+        _is_loading_details = false;
+        return;
+    }
+
+    ui->stadiumNameLineEdit->setText(stadium->stadium_name);
+    ui->teamNameLineEdit->setText(stadium->team_name);
+    ui->locationLineEdit->setText(stadium->location);
+    ui->leagueComboBox->setCurrentText(stadium->league);
+    ui->typologyComboBox->setCurrentText(stadium->ballpark_typology);
+    ui->surfaceComboBox->setCurrentText(stadium->playing_surface);
+    ui->roofComboBox->setCurrentText(stadium->roof_type);
+    ui->seatingCapacitySpinBox->setValue(stadium->seating_capacity);
+    ui->dateOpenedSpinBox->setValue(stadium->date_opened);
+    ui->centerFieldSpinBox->setValue(stadium->distance_to_center_field_ft);
+
+    _is_loading_details = false;
+}
+
+void DashboardPage::handleStadiumSelectionChanged(const QModelIndex& current_index)
+{
+    if (!current_index.isValid())
+    {
+        populateDetailsPanel(nullptr);
+        populateSouvenirModel(-1);
+        populateDistanceModel(-1);
+        return;
+    }
+
+    const int stadium_id = current_index.data(kPrimaryIdRole).toInt();
+    const std::optional<Stadium> selected_stadium = currentStadium();
+
+    populateDetailsPanel(selected_stadium ? &selected_stadium.value() : nullptr);
+    populateSouvenirModel(stadium_id);
+    populateDistanceModel(stadium_id);
+}
+
+std::optional<int> DashboardPage::currentStadiumId() const
+{
+    const QModelIndex current_index = ui->stadiumList->currentIndex();
+    if (!current_index.isValid())
+        return std::nullopt;
+
+    const int stadium_id = current_index.data(kPrimaryIdRole).toInt();
+    if (stadium_id <= 0)
+        return std::nullopt;
+
+    return stadium_id;
+}
+
+std::optional<Stadium> DashboardPage::currentStadium() const
+{
+    const std::optional<int> stadium_id = currentStadiumId();
+    if (!stadium_id.has_value())
+        return std::nullopt;
+
+    for (const Stadium& stadium : _stadiums)
+    {
+        if (stadium.stadium_id == *stadium_id)
+            return stadium;
+    }
+
+    return std::nullopt;
+}
+
+QString DashboardPage::stadiumDisplayText(const Stadium& stadium) const
+{
+    return QString("%1 - %2").arg(stadium.team_name, stadium.stadium_name);
+}
+
+QString DashboardPage::stadiumNameById(int stadium_id) const
+{
+    for (const Stadium& stadium : _stadiums)
+    {
+        if (stadium.stadium_id == stadium_id)
+            return stadium.stadium_name;
+    }
+
+    StadiumRepository* repo = APP->stadiumRepository();
+    if (repo == nullptr)
+        return QString("Stadium #%1").arg(stadium_id);
+
+    const std::optional<Stadium> stadium = repo->getStadiumByID(stadium_id);
+    if (!stadium.has_value())
+        return QString("Stadium #%1").arg(stadium_id);
+
+    return stadium->stadium_name;
+}
 
 void DashboardPage::on_addSouvenirButton_clicked()
 {
-    auto stadiumIndex = ui->stadiumList->currentIndex();
-    QSqlRecord record = stadiumModel->record(stadiumIndex.row());
-    if (stadiumIndex.isValid()) {
-        newSouvenirPopup dialog(this);
+    const std::optional<int> stadium_id = currentStadiumId();
+    if (!stadium_id.has_value())
+        return;
 
-        if (dialog.exec() == QDialog::Accepted)
-        {
-            QString name = dialog.getName();
-            double price = dialog.getPrice();
+    newSouvenirPopup dialog(this);
 
+    if (dialog.exec() != QDialog::Accepted)
+        return;
 
-                   // 2. Get the ID (Make sure this matches "stadium_id" in database_manager.cpp)
-            int stadiumId = record.value("stadium_id").toInt();
+    Souvenir item;
+    item.owner_stadium_id = *stadium_id;
+    item.name = dialog.getName();
+    item.price = dialog.getPrice();
 
-            Souvenir item;
-
-            item.owner_stadium_id = stadiumId;
-            item.name = name;
-            item.price = price;
-
-            APP->souvenirRepository()->addSouvenir(stadiumId, item);
-
-            qDebug() << name << price;
-
-            souvenirModel->select();
-        }
+    SouvenirRepository* repo = APP->souvenirRepository();
+    if (repo == nullptr || !repo->addSouvenir(*stadium_id, item))
+    {
+        QMessageBox::warning(this, "Add Souvenir", "Failed to add the new souvenir.");
+        return;
     }
 
-    return;
+    populateSouvenirModel(*stadium_id);
 }
+
 void DashboardPage::on_removeSouvenirButton_clicked()
 {
-    QModelIndex index = ui->souvenirTableView->currentIndex();
+    const QModelIndex current_index = ui->souvenirTableView->currentIndex();
+    if (!current_index.isValid())
+        return;
 
-    if (!index.isValid())
-        return; // nothing selected
+    const int row = current_index.row();
+    if (row < 0 || row >= static_cast<int>(_souvenirs.size()))
+        return;
 
-    int row = index.row();
+    SouvenirRepository* repo = APP->souvenirRepository();
+    if (repo == nullptr || !repo->deleteSouvenir(_souvenirs[row].souvenir_id))
+    {
+        QMessageBox::warning(this, "Remove Souvenir", "Failed to remove the selected souvenir.");
+        return;
+    }
 
-    int id = souvenirModel->data(souvenirModel->index(row, 0)).toInt();
-
-    APP->souvenirRepository()->deleteSouvenir(id);
-
-    souvenirModel->select();
+    populateSouvenirModel(currentStadiumId().value_or(-1));
 }
 
 void DashboardPage::on_uploadFile_clicked()
@@ -380,13 +600,7 @@ void DashboardPage::on_uploadFile_clicked()
     import_files(distance_files, false);
 
     if (imported_anything)
-    {
         refreshConnections();
-        if (stadiumModel != nullptr)
-            stadiumModel->select();
-        if (souvenirModel != nullptr)
-            souvenirModel->select();
-    }
 
     QMessageBox message_box(this);
     message_box.setWindowTitle("Import Files");
@@ -397,337 +611,280 @@ void DashboardPage::on_uploadFile_clicked()
     message_box.exec();
 }
 
-void DashboardPage::refreshConnections() {
-    // Get the NEW database handle after the reset
-    const QSqlDatabase db = APP->databaseManager()->getDatabaseObj();
-
-    // Delete old models if they exist to avoid holding dead connections
-    if (stadiumModel) {
-        stadiumModel->deleteLater();
-        stadiumModel = nullptr;
-    }
-    if (souvenirModel) {
-        souvenirModel->deleteLater();
-        souvenirModel = nullptr;
-    }
-    if (distanceModel) {
-        distanceModel->deleteLater();
-        distanceModel = nullptr;
-    }
-
-    // Re-link with the fresh DB handle
-    linkStadiumDB(db);
-    linkSouvenirDB(db);
-    linkDistanceDB(db);
+void DashboardPage::refreshConnections()
+{
+    populateStadiumModel(currentStadiumId().value_or(-1));
 }
 
 void DashboardPage::on_removeStadiumButton_clicked()
 {
-    QModelIndex index = ui->stadiumList->currentIndex();
+    const std::optional<int> stadium_id = currentStadiumId();
+    if (!stadium_id.has_value())
+        return;
 
-    if (!index.isValid())
-        return; // nothing selected
+    StadiumRepository* repo = APP->stadiumRepository();
+    if (repo == nullptr || !repo->deleteStadium(*stadium_id))
+    {
+        QMessageBox::warning(this, "Remove Stadium", "Failed to remove the selected stadium.");
+        return;
+    }
 
-    int row = index.row();
-
-    int id = stadiumModel->data(stadiumModel->index(row, 0)).toInt();
-
-    APP->stadiumRepository()->deleteStadium(id);
-
-    stadiumModel->select();
-}
-void DashboardPage::on_addStadiumButton_clicked() {
-     StadiumAdding dialog(this);
-     if (dialog.exec() == QDialog::Accepted) {
-         Stadium newStadium = dialog.getFormData();
-
-         /*qDebug() << */APP->stadiumRepository()->addStadium(newStadium);
-
-         // qDebug() << newStadium.league;
-
-         stadiumModel->select();
-     }
+    refreshConnections();
 }
 
-void DashboardPage::setupComboBox() {
-     // Add leagues
-     ui->leagueComboBox->addItem("National");
-     ui->leagueComboBox->addItem("American");
+void DashboardPage::on_addStadiumButton_clicked()
+{
+    StadiumAdding dialog(this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
 
-     // Add ballpark typology
-     ui->typologyComboBox->addItem("Retro Modern");
-     ui->typologyComboBox->addItem("Retro Classic");
-     ui->typologyComboBox->addItem("Jewel Box");
-     ui->typologyComboBox->addItem("Modern");
-     ui->typologyComboBox->addItem("Contemporary");
-     ui->typologyComboBox->addItem("Multipurpose");
+    StadiumRepository* repo = APP->stadiumRepository();
+    if (repo == nullptr || !repo->addStadium(dialog.getFormData()))
+    {
+        QMessageBox::warning(this, "Add Stadium", "Failed to add the new stadium.");
+        return;
+    }
 
-     // Add playing surfaces
-     ui->surfaceComboBox->addItem("Grass");
-     ui->surfaceComboBox->addItem("AstroTurf GameDay Grass");
-     ui->surfaceComboBox->addItem("AstroTurf GameDay Grass 3D");
-
-     // Add roof type
-     ui->roofComboBox->addItem("Open");
-     ui->roofComboBox->addItem("Retractable");
+    refreshConnections();
 }
-void DashboardPage::setupValidators() {
-    // Regex for Names and Locations
-    QRegularExpression nameRegex("^[a-zA-Z\\s\\-–'.]{1,100}$");
+
+void DashboardPage::setupComboBox()
+{
+    ui->leagueComboBox->addItem("National");
+    ui->leagueComboBox->addItem("American");
+
+    ui->typologyComboBox->addItem("Retro Modern");
+    ui->typologyComboBox->addItem("Retro Classic");
+    ui->typologyComboBox->addItem("Jewel Box");
+    ui->typologyComboBox->addItem("Modern");
+    ui->typologyComboBox->addItem("Contemporary");
+    ui->typologyComboBox->addItem("Multipurpose");
+
+    ui->surfaceComboBox->addItem("Grass");
+    ui->surfaceComboBox->addItem("AstroTurf GameDay Grass");
+    ui->surfaceComboBox->addItem("AstroTurf GameDay Grass 3D");
+
+    ui->roofComboBox->addItem("Open");
+    ui->roofComboBox->addItem("Retractable");
+}
+
+void DashboardPage::setupValidators()
+{
+    QRegularExpression nameRegex("^[a-zA-Z\\s\\-.]{1,100}$");
     QRegularExpression locRegex("^[a-zA-Z\\s,\\.\\-]{1,1000}$");
 
-    QRegularExpressionValidator *nameValidator = new QRegularExpressionValidator(nameRegex, this);
-    QRegularExpressionValidator *locValidator = new QRegularExpressionValidator(locRegex, this);
+    auto *nameValidator = new QRegularExpressionValidator(nameRegex, this);
+    auto *locValidator = new QRegularExpressionValidator(locRegex, this);
 
-    // Assign to widgets
     ui->stadiumNameLineEdit->setValidator(nameValidator);
     ui->teamNameLineEdit->setValidator(nameValidator);
     ui->locationLineEdit->setValidator(locValidator);
 
-    // SpinBox Ranges
     ui->seatingCapacitySpinBox->setRange(0, 200000);
     ui->dateOpenedSpinBox->setRange(1800, 2100);
 
-    // Unified Styling Logic
-    QList<QLineEdit*> lineEdits = {ui->stadiumNameLineEdit, ui->teamNameLineEdit, ui->locationLineEdit};
-    for (QLineEdit* edit : lineEdits) {
+    const QList<QLineEdit*> line_edits = { ui->stadiumNameLineEdit, ui->teamNameLineEdit, ui->locationLineEdit };
+    for (QLineEdit* edit : line_edits)
+    {
         connect(edit, &QLineEdit::textChanged, [edit]() {
-            if (edit->hasAcceptableInput() || edit->text().isEmpty()) {
+            if (edit->hasAcceptableInput() || edit->text().isEmpty())
                 edit->setStyleSheet("");
-            } else {
+            else
                 edit->setStyleSheet("border: 1px solid red; background-color: #FFF0F0;");
-            }
         });
     }
 }
-void DashboardPage::setupDetailsPanel() {
-    ui->centerFieldSpinBox->setMaximum(1000000); // Sets the max to 1,000,000
 
-    // 1. SYNC FROM LIST TO WIDGETS
-    connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
-        QSqlRecord record = stadiumModel->record(index.row());
+void DashboardPage::setupDetailsPanel()
+{
+    ui->centerFieldSpinBox->setMaximum(1000000);
 
-        // Sync LineEdits
-        ui->stadiumNameLineEdit->setText(record.value("stadium_name").toString());
-        ui->teamNameLineEdit->setText(record.value("team_name").toString());
-        ui->locationLineEdit->setText(record.value("location").toString());
-
-        // Sync ComboBoxes (Sets by string match)
-        ui->leagueComboBox->setCurrentText(record.value("league").toString());
-        ui->typologyComboBox->setCurrentText(record.value("ballpark_typology").toString());
-        ui->surfaceComboBox->setCurrentText(record.value("playing_surface").toString());
-        ui->roofComboBox->setCurrentText(record.value("roof_type").toString());
-
-        // Sync SpinBoxes
-        ui->seatingCapacitySpinBox->setValue(record.value("seating_capacity").toInt());
-        ui->dateOpenedSpinBox->setValue(record.value("date_opened").toInt());
-        ui->centerFieldSpinBox->setValue(record.value("distance_to_center_field_ft").toInt());
-    });
-
-    // 2. SYNC FROM WIDGETS TO DATABASE (Update on Enter/Change)
-
-    // Example: Team Name Update (Column 1)
     connect(ui->teamNameLineEdit, &QLineEdit::returnPressed, this, [this]() {
         updateField(1, ui->teamNameLineEdit->text());
     });
 
-    // Example: Location Update (Column 4)
     connect(ui->locationLineEdit, &QLineEdit::returnPressed, this, [this]() {
         updateField(4, ui->locationLineEdit->text());
     });
 
-    // Example: League Update (ComboBox)
     connect(ui->leagueComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         updateField(6, text);
     });
-    // Example: Surface Update (ComboBox)
+
     connect(ui->surfaceComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         updateField(5, text);
     });
-    // Example: topology Update (ComboBox)
+
     connect(ui->typologyComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         updateField(10, text);
     });
-    // Example: roof type Update (ComboBox)
+
     connect(ui->roofComboBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         updateField(11, text);
     });
 
-
-    // SPINBOXES
-    // Example: Capacity Update (SpinBox)
     void (QSpinBox::*valueChanged)(int) = &QSpinBox::valueChanged;
+
     connect(ui->seatingCapacitySpinBox, valueChanged, this, [this](int value) {
         updateField(3, value);
     });
-    // Example: Date Opened Update (SpinBox)
+
     connect(ui->dateOpenedSpinBox, valueChanged, this, [this](int value) {
         updateField(7, value);
     });
-    // Example: Centerfield Update (SpinBox)
+
     connect(ui->centerFieldSpinBox, valueChanged, this, [this](int value) {
         updateField(8, value);
     });
 }
-void DashboardPage::updateField(int columnIdx, const QVariant &value) {
-    QModelIndex currentIndex = ui->stadiumList->currentIndex();
-    if (currentIndex.isValid()) {
-        QModelIndex targetIndex = stadiumModel->index(currentIndex.row(), columnIdx);
-        if (stadiumModel->setData(targetIndex, value)) {
-            stadiumModel->submitAll();
-            qDebug() << "Column" << columnIdx << "updated successfully.";
-        } else {
-            qDebug() << "Update failed:" << stadiumModel->lastError().text();
-        }
+
+void DashboardPage::updateField(int columnIdx, const QVariant &value)
+{
+    if (_is_loading_details)
+        return;
+
+    const std::optional<Stadium> selected_stadium = currentStadium();
+    if (!selected_stadium.has_value())
+        return;
+
+    Stadium updated = *selected_stadium;
+
+    switch (columnIdx)
+    {
+    case 1:
+        updated.team_name = value.toString().trimmed();
+        break;
+    case 2:
+        updated.stadium_name = value.toString().trimmed();
+        break;
+    case 3:
+        updated.seating_capacity = value.toInt();
+        break;
+    case 4:
+        updated.location = value.toString().trimmed();
+        break;
+    case 5:
+        updated.playing_surface = value.toString().trimmed();
+        break;
+    case 6:
+        updated.league = value.toString().trimmed();
+        break;
+    case 7:
+        updated.date_opened = value.toInt();
+        break;
+    case 8:
+        updated.distance_to_center_field_ft = value.toInt();
+        updated.distance_to_center_field_raw = QString::number(updated.distance_to_center_field_ft);
+        break;
+    case 10:
+        updated.ballpark_typology = value.toString().trimmed();
+        break;
+    case 11:
+        updated.roof_type = value.toString().trimmed();
+        break;
+    default:
+        return;
     }
-}
 
-void DashboardPage::linkDistanceDB(const QSqlDatabase &db) {
-    setupDistanceModel(db);
-
-    // Assuming your UI has a QTableView named distanceTableView
-    ui->distancesTableView->setModel(distanceModel);
-
-    setupDistanceTableFormatting();
-    setupDistanceFiltering();
-}
-
-void DashboardPage::setupDistanceModel(const QSqlDatabase &db) {
-    distanceModel = new QSqlTableModel(this, db);
-    distanceModel->setTable("stadium_distances"); // Matches the table name in your DB schema
-
-    // Set filter to empty initially or show all
-    distanceModel->setFilter("stadium_a_id = ''");
-
-    if (!distanceModel->select()) {
-        qDebug() << "Distance Model Error:" << distanceModel->lastError().text();
+    if (updated.team_name.isEmpty() || updated.stadium_name.isEmpty())
+    {
+        QMessageBox::warning(this, "Update Stadium", "Team name and stadium name cannot be empty.");
+        populateDetailsPanel(&selected_stadium.value());
+        return;
     }
 
-    distanceModel->setEditStrategy(QSqlTableModel::OnFieldChange);
+    StadiumRepository* repo = APP->stadiumRepository();
+    if (repo == nullptr || !repo->upDateStadiumInform(updated.stadium_id, updated))
+    {
+        QMessageBox::warning(this, "Update Stadium", "Failed to update the selected stadium.");
+        refreshConnections();
+        return;
+    }
+
+    populateStadiumModel(updated.stadium_id);
 }
-
-void DashboardPage::setupDistanceTableFormatting() {
-    // Hide IDs if they exist in the distances table (e.g., column 0)
-    ui->distancesTableView->setColumnHidden(0, true);
-
-    ui->distancesTableView->setItemDelegateForColumn(1, new StadiumNameDelegate(this));
-
-    distanceModel->setHeaderData(0, Qt::Horizontal, "From Stadium");
-    distanceModel->setHeaderData(1, Qt::Horizontal, "To Stadium");
-    distanceModel->setHeaderData(2, Qt::Horizontal, "Distance (mi)");
-
-    QHeaderView *header = ui->distancesTableView->horizontalHeader();
-    header->setSectionResizeMode(QHeaderView::Stretch);
-}
-
-void DashboardPage::setupDistanceFiltering() {
-    // When a stadium is clicked, show all distances originating FROM that stadium
-    connect(ui->stadiumList, &QListView::clicked, this, [this](const QModelIndex &index) {
-        QSqlRecord record = stadiumModel->record(index.row());
-
-        int stadiumID = record.value("stadium_id").toInt();
-
-        distanceModel->setFilter(QString("stadium_a_id = '%1'").arg(stadiumID));
-        distanceModel->select();
-    });
-}
-
 
 void DashboardPage::on_removeDistanceButton_clicked()
 {
-    // 1. Get the current selection from the table view
-    QModelIndex index = ui->distancesTableView->currentIndex();
-    if (!index.isValid()) {
-        return; // Nothing selected
+    const QModelIndex current_index = ui->distancesTableView->currentIndex();
+    if (!current_index.isValid())
+        return;
+
+    const int row = current_index.row();
+    if (row < 0 || row >= static_cast<int>(_distances.size()))
+        return;
+
+    const DistanceEdge& edge = _distances[row];
+    DistanceRepository* repo = APP->distanceRepository();
+    if (repo == nullptr || !repo->removeDistanceBetweenStadiums(edge.from_stadium_id, edge.to_stadium_id))
+    {
+        QMessageBox::warning(this, "Remove Distance", "Failed to remove the selected distance.");
+        return;
     }
 
-    int row = index.row();
-
-    // 2. Access the raw record from the model
-    // This ignores the Delegate and gives you the actual database values
-    QSqlRecord record = distanceModel->record(row);
-
-    // 3. Extract the IDs using your database column names
-    int originId = record.value("stadium_a_id").toInt();
-    int destId = record.value("stadium_b_id").toInt();
-    // 4. Call your repository function
-    APP->distanceRepository()->removeDistanceBetweenStadiums(originId, destId);
-
-    // 5. Refresh the UI
-    distanceModel->select();
+    populateDistanceModel(currentStadiumId().value_or(-1));
 }
 
-void DashboardPage::on_addDistanceButton_clicked() {
-    QModelIndex stadiumIdx = ui->stadiumList->currentIndex();
-    if (!stadiumIdx.isValid()) {
+void DashboardPage::on_addDistanceButton_clicked()
+{
+    const std::optional<Stadium> origin = currentStadium();
+    if (!origin.has_value())
+    {
         QMessageBox::warning(this, "Selection Required", "Please select an originating stadium from the list first.");
         return;
     }
 
-    // 1. Get the origin stadium details
-    QSqlRecord originRecord = stadiumModel->record(stadiumIdx.row());
-    int originId = originRecord.value("stadium_id").toInt();
-    QString originName = originRecord.value("stadium_name").toString();
-
-    // 2. Create the Popup Dialog on the stack
     QDialog dialog(this);
-    dialog.setWindowTitle("Add New Distance from " + originName);
+    dialog.setWindowTitle("Add New Distance from " + origin->stadium_name);
 
     QFormLayout form(&dialog);
-    QComboBox* stadiumCombo = new QComboBox(&dialog);
-    QLineEdit* distanceEdit = new QLineEdit(&dialog);
-    distanceEdit->setValidator(new QIntValidator(1, 9999, &dialog));
-    distanceEdit->setPlaceholderText("Miles");
+    auto *stadium_combo = new QComboBox(&dialog);
+    auto *distance_edit = new QLineEdit(&dialog);
+    distance_edit->setValidator(new QIntValidator(1, 9999, &dialog));
+    distance_edit->setPlaceholderText("Miles");
 
-    // 3. Identify existing destinations to exclude them (so we don't add duplicates)
-    QSet<int> existingDestIds;
-    for (int i = 0; i < distanceModel->rowCount(); ++i) {
-        existingDestIds.insert(distanceModel->record(i).value("stadium_b_id").toInt());
+    QSet<int> existing_dest_ids;
+    for (const DistanceEdge& edge : _distances)
+        existing_dest_ids.insert(edge.to_stadium_id);
+
+    for (const Stadium& stadium : _stadiums)
+    {
+        if (stadium.stadium_id != origin->stadium_id && !existing_dest_ids.contains(stadium.stadium_id))
+            stadium_combo->addItem(stadium.stadium_name, stadium.stadium_id);
     }
 
-    // 4. Populate the ComboBox with valid targets
-    // We iterate through the stadiumModel to find stadiums that aren't 'Us' and aren't already linked
-    for (int i = 0; i < stadiumModel->rowCount(); ++i) {
-        QSqlRecord rec = stadiumModel->record(i);
-        int targetId = rec.value("stadium_id").toInt();
-        QString targetName = rec.value("stadium_name").toString();
-
-        if (targetId != originId && !existingDestIds.contains(targetId)) {
-            stadiumCombo->addItem(targetName, targetId); // Store ID in UserData
-        }
-    }
-
-    if (stadiumCombo->count() == 0) {
+    if (stadium_combo->count() == 0)
+    {
         QMessageBox::information(this, "No Options", "All possible stadium connections already exist.");
         return;
     }
 
-    form.addRow("To Stadium:", stadiumCombo);
-    form.addRow("Distance (mi):", distanceEdit);
+    form.addRow("To Stadium:", stadium_combo);
+    form.addRow("Distance (mi):", distance_edit);
 
-    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    form.addRow(&buttonBox);
-    connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-    connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    QDialogButtonBox button_box(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+    form.addRow(&button_box);
+    connect(&button_box, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(&button_box, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
-    // 5. Execute and Save
-    if (dialog.exec() == QDialog::Accepted) {
-        int destinationId = stadiumCombo->currentData().toInt();
-        int distance = distanceEdit->text().toInt();
+    if (dialog.exec() != QDialog::Accepted)
+        return;
 
-        if (distance <= 0) {
-            QMessageBox::warning(this, "Invalid Input", "Please enter a valid distance.");
-            return;
-        }
+    const int destination_id = stadium_combo->currentData().toInt();
+    const int distance = distance_edit->text().toInt();
 
-        // Call your repository to save the distance
-        bool success = APP->distanceRepository()->addDistanceBetweenStadiums(originId, destinationId, distance);
-
-        if (success) {
-            distanceModel->select(); // Refresh the table view
-            qDebug() << "Distance added successfully between" << originId << "and" << destinationId;
-        } else {
-            QMessageBox::critical(this, "Database Error", "Failed to insert distance into the database.");
-        }
+    if (distance <= 0)
+    {
+        QMessageBox::warning(this, "Invalid Input", "Please enter a valid distance.");
+        return;
     }
+
+    DistanceRepository* repo = APP->distanceRepository();
+    if (repo == nullptr || !repo->addDistanceBetweenStadiums(origin->stadium_id, destination_id, distance))
+    {
+        QMessageBox::critical(this, "Database Error", "Failed to insert distance into the database.");
+        return;
+    }
+
+    populateDistanceModel(origin->stadium_id);
 }

@@ -6,6 +6,7 @@
 #include "database_manager.h"
 
 class Application;
+class QSqlQuery;
 
 class StadiumRepository
 {
@@ -53,8 +54,6 @@ public:
     bool stadiumNameExists(const QString& stadium_name) const;
 
     bool teamNameExists(const QString& team_name) const;
-
-    DatabaseManager& getDatabaseManager() const { return _db_manager; }
 
 private:
     Stadium buildStadiumFromQuery(const QSqlQuery& q) const;

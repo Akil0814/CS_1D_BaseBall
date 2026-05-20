@@ -1,7 +1,5 @@
 #include "trip_planner.h"
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QVariant>
+
 #include <limits>
 #include <algorithm>
 #include <queue>
@@ -12,8 +10,9 @@
 // =====================================================
 // Constructor
 // =====================================================
-TripPlanner::TripPlanner(StadiumRepository& repo)
-    : _repo(repo),
+TripPlanner::TripPlanner(StadiumRepository& stadium_repo, DistanceRepository& distance_repo)
+    : _stadium_repo(stadium_repo),
+      _distance_repo(distance_repo),
       _current_trip(nullptr)
 {
 }
@@ -26,69 +25,17 @@ Trip* TripPlanner::getCurrentTrip() const
     return _current_trip.get();
 }
 
-// =====================================================
-// REAL distance lookup (DB-based)
-// =====================================================
-// double TripPlanner::getDistance(int from_id, int to_id) const
-// {
-//     if (from_id == to_id)
-//         return 0.0;
-//
-//     QSqlDatabase db = _repo.getDatabaseManager().getDatabaseObj();
-//     if (!db.isOpen())
-//         return std::numeric_limits<double>::max();
-//
-//     int a = std::min(from_id, to_id);
-//     int b = std::max(from_id, to_id);
-//
-//     QSqlQuery q(db);
-//     q.prepare(R"(
-//         SELECT distance_miles
-//         FROM stadium_distances
-//         WHERE stadium_a_id = ? AND stadium_b_id = ?
-//     )");
-//
-//     q.addBindValue(a);
-//     q.addBindValue(b);
-//
-//     if (!q.exec())
-//         return std::numeric_limits<double>::max();
-//
-//     if (q.next())
-//         return q.value(0).toDouble();
-//
-//     return std::numeric_limits<double>::max();
-// }
 double TripPlanner::getDistance(int from_id, int to_id) const
 {
     if (from_id == to_id)
         return 0.0;
 
-    QSqlDatabase db = _repo.getDatabaseManager().getDatabaseObj();
-
-    if (!db.isOpen())
+    const std::optional<double> distance =
+        _distance_repo.getDistanceBetweenStadium(from_id, to_id);
+    if (!distance.has_value())
         return std::numeric_limits<double>::max();
 
-    int a = std::min(from_id, to_id);
-    int b = std::max(from_id, to_id);
-
-    QSqlQuery q(db);
-    q.prepare(R"(
-        SELECT distance_miles
-        FROM stadium_distances
-        WHERE stadium_a_id = ? AND stadium_b_id = ?
-    )");
-
-    q.addBindValue(a);
-    q.addBindValue(b);
-
-    if (!q.exec())
-        return std::numeric_limits<double>::max();
-
-    if (q.next())
-        return q.value(0).toDouble();
-
-    return std::numeric_limits<double>::max();
+    return *distance;
 }
 
 // =====================================================
@@ -96,7 +43,7 @@ double TripPlanner::getDistance(int from_id, int to_id) const
 // =====================================================
 Stadium TripPlanner::getStadiumById(int id) const
 {
-    auto s = _repo.getStadiumByID(id);
+    auto s = _stadium_repo.getStadiumByID(id);
     if (s.has_value())
         return *s;
 
@@ -413,7 +360,7 @@ std::vector<int> TripPlanner::getAllStadiumIds() const
 {
     std::vector<int> ids;
 
-    auto stadiums = _repo.getAllStadiums(
+    auto stadiums = _stadium_repo.getAllStadiums(
         StadiumRepository::StadiumSortBy::StadiumName
     );
 
@@ -728,32 +675,12 @@ bool TripPlanner::generateBFSResultFrom(int start_id)
 std::vector<int> TripPlanner::getNeighbors(int id) const
 {
     std::vector<int> neighbors;
+    const std::optional<DistanceNode> node = _distance_repo.getDistanceNodeOfStadium(id);
+    if (!node.has_value())
+        return neighbors;
 
-    QSqlDatabase db = _repo.getDatabaseManager().getDatabaseObj();
-    QSqlQuery q(db);
-
-    q.prepare(R"(
-        SELECT stadium_a_id, stadium_b_id
-        FROM stadium_distances
-        WHERE stadium_a_id = ? OR stadium_b_id = ?
-    )");
-
-    q.addBindValue(id);
-    q.addBindValue(id);
-
-    if (q.exec())
-    {
-        while (q.next())
-        {
-            int a = q.value(0).toInt();
-            int b = q.value(1).toInt();
-
-            if (a == id)
-                neighbors.push_back(b);
-            else
-                neighbors.push_back(a);
-        }
-    }
+    for (const DistanceEdge& edge : node->edges)
+        neighbors.push_back(edge.to_stadium_id);
 
     return neighbors;
 }

@@ -69,26 +69,17 @@ bool Application::init()
     else
         _souvenir_repo.reset();
 
-    // if (distance_data_available)
-    // {
-    //     if(!_distance_repo)
-    //         _distance_repo = std::unique_ptr<DistanceRepository>(new DistanceRepository(*_db_manager));
-    //
-    //     if (!_trip_planner)
-    //         _trip_planner = std::make_unique<TripPlanner>(*stadiumRepository());
-    // }
+    if (distance_data_available)
+    {
+        if (!_distance_repo)
+        {
+            _distance_repo = std::unique_ptr<DistanceRepository>(
+                new DistanceRepository(*_db_manager)
+            );
+        }
 
-    //for test_planner_cli test
-    if (!_distance_repo)
-    {
-        _distance_repo = std::unique_ptr<DistanceRepository>(
-            new DistanceRepository(*_db_manager)
-        );
-    }
-    // FORCE TripPlanner for CLI testing
-    if (!_trip_planner)
-    {
-        _trip_planner = std::make_unique<TripPlanner>(*stadiumRepository());
+        if (!_trip_planner)
+            _trip_planner = std::make_unique<TripPlanner>(*_stadium_repo, *_distance_repo);
     }
     else
     {
@@ -270,10 +261,4 @@ bool Application::isTripPlannerAvailable() const
 
 DatabaseManager* Application::databaseManager() {
     return _db_manager.get();
-}
-
-//For trip_planner_cli (testing)
-TripPlanner* Application::getTripPlanner()
-{
-    return _trip_planner.get();
 }

@@ -122,7 +122,6 @@ size_t Trip::currentStopIndex() const
     return _current_stop_index;
 }
 
-//for trip_planner_cli (testing
 const TripResult& Trip::getResult() const {
     return _all_trip_stop;
 }

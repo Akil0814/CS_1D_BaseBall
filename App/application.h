@@ -23,9 +23,6 @@ public:
     // Initialize application paths, services, and repositories.
     bool init();
 
-    //For trip_planner_cli (testing)
-    TripPlanner* getTripPlanner();
-
     // Return the stadium repository.
     StadiumRepository* stadiumRepository();
     // Return the souvenir repository if available.
@@ -58,7 +55,6 @@ public:
     // Return the located assets directory, or an empty string if unavailable.
     const QString& assetsDir() const;
 
-    // Erfan Testing
     DatabaseManager* databaseManager();
 
 private:
@@ -72,8 +68,6 @@ private:
     Application(Application&& move) = delete;
     Application& operator=(Application&& move) = delete;
     ~Application();
-    //for trip_planner_cli, testing
-    friend class TripPlannerCLI;
 
 private:
     QString _last_error = {};

@@ -30,9 +30,7 @@ public:
     size_t stopCount() const;
     size_t currentStopIndex() const;
 
-    //for trip_planner_cli (testing
     const TripResult& getResult() const;
-    
 
 private:
     size_t _current_stop_index = 0;
